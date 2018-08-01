@@ -74,17 +74,27 @@ class Track:
         return "T["+str(self.bpm) + "," + str(self.filename) + "]"
 
     def write_spectrogram(self): 
-        (y, sr) = librosa.load(self.filename)
+        
         try:
             os.makedirs(self.spect_path)
         except: 
             print("Path already exists: " + self.spect_path)
-        t = extract_audio(y, sr)
-        print("Original length: " + str(librosa.core.get_duration(y)))
-        print("Reduced length: " + str(librosa.core.get_duration(t)))
-        imgname = Path(self.filename).stem + ".png"
-        save_spectrogram(t, self.spect_path + "/" + imgname)
 
+        imgname = Path(self.filename).stem + ".png"
+        fullname = self.spect_path + "/" + imgname
+
+        if os.path.exists(fullname): 
+            print("File already exists: " + fullname)
+            return
+
+        try:
+            (y, sr) = librosa.load(self.filename)
+            t = extract_audio(y, sr)
+            print("Original length: " + str(librosa.core.get_duration(y)))
+            print("Reduced length: " + str(librosa.core.get_duration(t)))
+            save_spectrogram(t, fullname)
+        except Exception as e: 
+            pprint(e)
 
 
 class EllingtonData: 
@@ -105,8 +115,9 @@ class EllingtonData:
 def proc(tp):
     i = tp[0]
     track = tp[1]
+    print("Processing track ["+str(i)+"]: ")
+    pprint(track)
     track.write_spectrogram()
-    print("["+str(i) + "]")
 
 def main():
     ed = EllingtonData.from_file('example.json')
@@ -115,15 +126,8 @@ def main():
 
     tracks = list(enumerate(ed.tracks))
 
-    pool = Pool()
+    pool = Pool(64)
     pool.map(proc, tracks)
-
-    # tc = str(len(ed.tracks))
-    # ix = 0
-    # for t in ed.tracks: 
-    #     print("["+str(ix) + "/" + tc + "]")
-    #     t.write_spectrogram()
-    #     ix = ix + 1
 
 
 if __name__ == '__main__': 
