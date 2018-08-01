@@ -1,9 +1,13 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
+# On OSX, this must be invoked with: 
+# export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
+# in order to disable certain checks that stop multiprocessing from working
 from __future__ import print_function
+from multiprocessing import Pool
 from pprint import pprint, pformat
 import librosa
 import librosa.display
-import matplotlib.pyplot as plt
+
 import numpy as np
 import json
 import os
@@ -30,6 +34,7 @@ def extract_audio(audiodata, samplerate, start=60, length=60):
     return audiodata[startframe:endframe]
 
 def save_spectrogram(audio_dat, filename):
+    import matplotlib.pyplot as plt
     print("Saving spectrogram to " + filename)
     fig = plt.figure(figsize=(12, 12))
     S = librosa.stft(audio_dat)
@@ -41,7 +46,8 @@ def save_spectrogram(audio_dat, filename):
     ax.axes.get_xaxis().set_visible(False)
     ax.axes.get_yaxis().set_visible(False)
     librosa.display.specshow(D, y_axis='linear')
-    plt.savefig(filename, dpi=100, bbox_inches='tight', pad_inches=0.0)
+    fig.savefig(filename, dpi=100, bbox_inches='tight', pad_inches=0.0)
+    plt.close(fig)
 
 class Track: 
     bpm=None
@@ -60,7 +66,7 @@ class Track:
     def __init__(self, bpm, filename): 
         self.bpm = bpm
         self.filename = filename
-        self.spect_path = "/tmp/spect/" + str(bpm) + "/"
+        self.spect_path = "tmp/spect/" + str(bpm) + "/"
         
     def __str__(self):
         return "T["+str(self.bpm) + "," + str(self.filename) + "]"
@@ -69,7 +75,10 @@ class Track:
 
     def write_spectrogram(self): 
         (y, sr) = librosa.load(self.filename)
-        os.makedirs(self.spect_path)
+        try:
+            os.makedirs(self.spect_path)
+        except: 
+            print("Path already exists: " + self.spect_path)
         t = extract_audio(y, sr)
         print("Original length: " + str(librosa.core.get_duration(y)))
         print("Reduced length: " + str(librosa.core.get_duration(t)))
@@ -92,20 +101,30 @@ class EllingtonData:
         return str(self.tracks)
     def __repr__(self):
         return pformat(self.tracks)
+     
+def proc(tp):
+    i = tp[0]
+    track = tp[1]
+    track.write_spectrogram()
+    print("["+str(i) + "]")
 
-# for f in ["saints.mp3", "jump.mp3", "boatmen.mp3"]:
-#     (y, sr) = librosa.load(f)
-#     print("Original length: " + str(librosa.core.get_duration(y)))
-#     save_spectrogram(y, "spect/full/" +f + ".png")
-#     t = extract(y, sr)
-#     print("Reduced length: " + str(librosa.core.get_duration(t)))
-#     print("Original length (again): " + str(librosa.core.get_duration(y)))
-#     save_spectrogram(t, "spect/trimmed/" + f + ".trimmed.png")
+def main():
+    ed = EllingtonData.from_file('example.json')
 
-        
-ed = EllingtonData.from_file('example.json')
-    
-pprint(ed)
+    pprint(ed)
 
-for t in ed.tracks: 
-    t.write_spectrogram()
+    tracks = list(enumerate(ed.tracks))
+
+    pool = Pool()
+    pool.map(proc, tracks)
+
+    # tc = str(len(ed.tracks))
+    # ix = 0
+    # for t in ed.tracks: 
+    #     print("["+str(ix) + "/" + tc + "]")
+    #     t.write_spectrogram()
+    #     ix = ix + 1
+
+
+if __name__ == '__main__': 
+    main()
