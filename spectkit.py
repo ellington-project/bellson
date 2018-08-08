@@ -144,7 +144,7 @@ class EllingtonData:
 def proc(tp):
     i = tp[0]
     track = tp[1]
-    print("Processing track ["+str(i)+"]: ")
+    print("Processing track ["+str(i)+" / 990]: ")
     pprint(track)
     track.write_spectrograms()
 
@@ -155,7 +155,7 @@ def main():
 
     tracks = list(enumerate(ed.tracks))
 
-    pool = Pool(8)
+    pool = Pool(10)
     pool.map(proc, tracks)
 
 
