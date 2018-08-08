@@ -4,9 +4,9 @@ import numpy as np
 import math
 import logging
 
-from ellington_library import Track
+from .ellington_library import Track
 
-SAMPLE_LENGTH = 60
+SAMPLE_LENGTH = 10
 SAMPLE_START = 60
 SAMPLE_INTERVAL = 1
 
@@ -48,7 +48,7 @@ class AudioTrack:
         # This test is garbage.
         if (not self.loaded): 
             logging.debug("Loading audio data")
-            (y, sr) = librosa.load(self.track.filename, res_type='kaiser_fast')
+            (y, sr) = librosa.load(self.track.filename, sr=1000, res_type='kaiser_fast')
             self.audio = y
             self.sr = sr
             self.loaded = True
