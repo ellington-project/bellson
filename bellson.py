@@ -47,29 +47,32 @@ def main():
 
             label = np.array([t.bpm])
 
-            for ad in audiotrack.audio_intervals():
-                logging.debug("Audio data recieved")
-                logging.debug("Audio of shape: " + str(ad[2].shape))
+            audiotrack.load()
+            audiotrack.save_spectrogram()
 
-                data = np.array(ad[2], ndmin=2)
+            # for ad in audiotrack.spect_intervals():
+            #     logging.debug("Audio data recieved")
+            #     logging.debug("Audio of shape: " + str(ad[2].shape))
+
+            #     data = np.array(ad[2], ndmin=2)
                 
 
-                logging.debug("Data shape" + str(data.shape))
-                logging.debug("Labels shape" + str(label.shape))
+            #     logging.debug("Data shape" + str(data.shape))
+            #     logging.debug("Labels shape" + str(label.shape))
 
-                loss = model.train_on_batch(x=data, y=label)
-                logging.info("Model loss = " + str(loss))
+            #     loss = model.train_on_batch(x=data, y=label)
+            #     logging.info("Model loss = " + str(loss))
 
-            print("\t Testing audio data:")
-            for ad in audiotrack.audio_intervals(True): 
-                logging.debug("Audio data recieved")
-                logging.debug("Audio of shape: " + str(ad[2].shape))
+            # print("\t Testing audio data:")
+            # for ad in audiotrack.audio_intervals(True): 
+            #     logging.debug("Audio data recieved")
+            #     logging.debug("Audio of shape: " + str(ad[2].shape))
 
-                data = np.array(ad[2], ndmin=2)
+            #     data = np.array(ad[2], ndmin=2)
 
-                preds = np.argmax(model.predict_on_batch(x=data))
+            #     preds = np.argmax(model.predict_on_batch(x=data))
 
-                logging.info("Model preds from test: = " + str(preds) + ", actual : " + str(t.bpm))
+            #     logging.info("Model preds from test: = " + str(preds) + ", actual : " + str(t.bpm))
 
             # print(ad[0:10])
 
