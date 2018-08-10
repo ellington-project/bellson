@@ -44,11 +44,13 @@ def main():
         keras.layers.MaxPool2D(pool_size=(2, 2)),
         keras.layers.Dropout(0.25),
 
-        keras.layers.Conv2D(64, (5, 5), activation='relu'),
-        keras.layers.Conv2D(64, (5, 5), activation='relu'),
-        keras.layers.MaxPool2D(pool_size=(2, 2)),
+        # keras.layers.Conv2D(64, (5, 5), activation='relu'),
+        # keras.layers.Conv2D(64, (5, 5), activation='relu'),
+        # keras.layers.MaxPool2D(pool_size=(2, 2)),
         keras.layers.Dropout(0.25),
         keras.layers.Flatten(), 
+        keras.layers.Dense(128, activation=tf.nn.relu),
+        keras.layers.Dense(128, activation='sigmoid'),
         keras.layers.Dense(400, activation=tf.nn.softmax)
     ])
 
