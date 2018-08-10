@@ -95,7 +95,8 @@ class AudioTrack:
         
 
     def save_spectrogram(self): 
-        # save_spect(self.spect, self.track.trackname + ".png")
+        logging.info("Saving spectrograms")
+        save_spect(self.spect, self.track.trackname + ".png")
         
         (h, w) = self.spect.shape
         start = int((60 / self.length) * w)
@@ -123,9 +124,11 @@ class AudioTrack:
         (h, w) = self.spect.shape
         for (s, e) in self.intervals(testing): 
 
-            ss = int((s / self.length) * w)
-            se = int((e / self.length) * w)
-            yield (s, e, self.spect[:, sf:ef])
+            ss = int(math.floor((s / self.length) * w))
+            # We can't calculate the end in the same way, as we want it to always be the same size: 
+            # Todo: Find a better way of calculating this! 
+            se = ss + int(math.floor((SAMPLE_LENGTH/ self.length) * w))
+            yield (s, e, self.spect[:, ss:se])
 
         logging.debug("Yielded all spectrogram data available") 
 
