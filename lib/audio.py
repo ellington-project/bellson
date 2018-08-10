@@ -25,23 +25,6 @@ def is_test(s):
     else: 
         return False
 
-def save_spect(data, fname):
-    import matplotlib.pyplot as plt
-        # Create a figure, and configure it
-    (h, w) = data.shape
-    fig = plt.figure(figsize=(w/100, h/100))
-    ax = plt.subplot(111)
-    ax.set_frame_on(False)
-    plt.axis('off')
-    ax.axes.get_xaxis().set_visible(False)
-    ax.axes.get_yaxis().set_visible(False)
-
-    # Perform some magnitue-to-frequency calculations, and write the result to the figure
-    librosa.display.specshow(data, y_axis='linear')
-
-    # Save the figure, and close it
-    fig.savefig("data/spect/" + fname, dpi=100, bbox_inches='tight', pad_inches=0.0)
-    plt.close(fig)
 
 class AudioTrack:
     # Meta, and file information
@@ -94,18 +77,33 @@ class AudioTrack:
             logging.debug("Audio data already loaded!")
         
 
-    def save_spectrogram(self): 
+    def plot_spectrogram(self): 
+        import matplotlib.pyplot as plt
         logging.info("Saving spectrograms")
-        save_spect(self.spect, self.track.trackname + ".png")
-        
+
+        # Create a figure, and configure it
         (h, w) = self.spect.shape
-        start = int((60 / self.length) * w)
-        end = int((70 / self.length) * w)
+        fig = plt.figure(figsize=(w/100, h/100))
+        ax = plt.subplot(111)
+        ax.set_frame_on(False)
+        plt.axis('off')
+        ax.axes.get_xaxis().set_visible(False)
+        ax.axes.get_yaxis().set_visible(False)
 
-        subspect = self.spect[:, start:end] 
-        logging.debug("Saving slice of size: " + str(subspect.shape))
+        # Perform some magnitue-to-frequency calculations, and write the result to the figure
+        librosa.display.specshow(self.spect, y_axis='linear')
 
-        save_spect(subspect, self.track.trackname + "_[" + str(start) + ":" + str(end) + "].png")
+        # Save the figure, and close it
+        fig.savefig("data/spect/" + self.track.trackname + ".png", dpi=100, bbox_inches='tight', pad_inches=0.0)
+        plt.close(fig)
+
+    def save_spectrogram(self):
+        logging.info("Saving spectrogram as numpy array") 
+        np.savez_compressed("data/np/" + self.track.trackname + ".npz", spect=self.spect)
+        logging.info("Saved to file") 
+        logging.info("Loading back from file") 
+        np.load("data/np/" + self.track.trackname + ".npz")
+        logging.info("Loaded back")
 
         
     def audio_intervals(self, testing=False):

@@ -20,22 +20,6 @@ def main():
     # Define some learning stuff...
     class_names = [str(n) for n in range(0, 400)]
 
-    # model = keras.Sequential([
-    #     keras.layers.Conv2D(16,
-    #                         (8, 8),
-    #                         activation='relu',
-    #                         input_shape=(1025, 861, 1)),
-
-    #     keras.layers.Conv2D(16, (8, 8)),
-    #     # keras.layers.Conv2D(16, (8,8)),
-    #     keras.layers.MaxPool2D(pool_size=(16, 16)),
-    #     keras.layers.Conv2D(16, (8, 8)),
-    #     keras.layers.MaxPool2D(pool_size=(2, 2)),
-    #     keras.layers.Flatten(),
-    #     keras.layers.Dense(128, activation=tf.nn.relu),
-    #     keras.layers.Dense(400, activation=tf.nn.softmax)
-    # ])
-
     model = keras.Sequential([
         keras.layers.Conv2D(32, (21,21), strides=(3,3), activation='relu',
                             input_shape=(1025, 861, 1)),
@@ -104,8 +88,6 @@ def main():
 
                 logging.info("Model preds from test: = " +
                              str(preds) + ", actual : " + str(t.bpm))
-
-            # print(ad[0:10])
 
 
 if __name__ == '__main__':
