@@ -12,13 +12,6 @@ SAMPLE_INTERVAL = 1
 
 SAMPLE_RATE = 44100
 
-class SamplingConfig: 
-    def __init__(self, length, start, interval, rate): 
-        self.length = length
-        self.start = start 
-        self.interval = interval
-        self.rate = rate
-
 def is_test(s):
     if s % 10 == 0: 
         return True
@@ -26,7 +19,7 @@ def is_test(s):
         return False
 
 
-class AudioTrack:
+class Audio:
     # Meta, and file information
     track = None
     length = None
@@ -99,10 +92,12 @@ class AudioTrack:
 
     def save_spectrogram(self):
         logging.info("Saving spectrogram as numpy array") 
-        np.savez_compressed("data/np/" + self.track.trackname + ".npz", spect=self.spect)
+        np.savez_compressed("data/np/" + self.track.digest + ".npz", spect=self.spect)
         logging.info("Saved to file") 
+    
+    def load_spectrogram(self):
         logging.info("Loading back from file") 
-        np.load("data/np/" + self.track.trackname + ".npz")
+        self.spect = np.load("data/np/" + self.track.digest + ".npz")
         logging.info("Loaded back")
 
         
@@ -115,6 +110,20 @@ class AudioTrack:
             yield (s, e, self.audio[sf:ef])
 
         logging.debug("Yielded all audio data available") 
+
+    def spect_interval(self, start=60, end=70): 
+        self.load_spectrogram()
+        # Check for tracks shorter than the training sample length
+        if self.length < SAMPLE_LENGTH:
+            logging.error("Audio track too short to extract intervals")
+        # Define the start and end of the range of samples
+        start = int(math.floor(min(SAMPLE_START, self.length-SAMPLE_LENGTH)))
+        stop = int(math.floor(self.length)) - SAMPLE_LENGTH
+        for s in range(start, stop, SAMPLE_INTERVAL):
+            # TODO: Handle non-1 SAMPLE_INTERVALs? Do we need to?
+            if is_test(s) == testing:
+                yield (s, s + SAMPLE_LENGTH)
+
 
     def spect_intervals(self, testing=False): 
         self.load()

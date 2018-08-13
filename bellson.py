@@ -8,8 +8,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from lib.ellington_library import EllingtonLibrary, Track
-from lib.audio import AudioTrack
-from lib.generator import DataGenerator
+from lib.audio import Audio
+from lib.generator import LibraryIterator, TrackIterator
 
 
 def main():
@@ -46,48 +46,56 @@ def main():
 
     count = str(len(el.tracks))
 
-    for i in range(0, 10):
-        ix = 0
-        for t in el.tracks:
-            ix = ix + 1
-            print("Track: " + str(t.trackname) + " " + str(ix) + " / " + count)
-            print("\t Testing audio data: ")
+    libgen = LibraryIterator(el)
 
-            audiotrack = AudioTrack(t)
+    for s in libgen.batch(): 
+        print("Expected " + str(libgen.len()) + " samples")
+        print(str(s))
 
-            print("\t Training audio data: ")
+    # model.fit_generator(libgen.iter)
 
-            label = np.array([t.bpm])
+    # for i in range(0, 10):
+    #     ix = 0
+    #     for t in el.tracks:
+    #         ix = ix + 1
+    #         print("Track: " + str(t.trackname) + " " + str(ix) + " / " + count)
+    #         print("\t Testing audio data: ")
 
-            audiotrack.load()
-            audiotrack.save_spectrogram()
+    #         audiotrack = Audio(t)
 
-            print("\t Training data:")
-            for ad in audiotrack.spect_intervals():
-                logging.debug("Audio data recieved")
-                logging.debug("Audio of shape: " + str(ad[2].shape))
+    #         print("\t Training audio data: ")
 
-                (w, h) = ad[2].shape
-                data = np.reshape(ad[2], (1, w, h, 1))
+    #         label = np.array([t.bpm])
 
-                logging.debug("Data shape" + str(data.shape))
-                logging.debug("Labels shape" + str(label.shape))
+    #         audiotrack.load()
+    #         audiotrack.save_spectrogram()
 
-                loss = model.train_on_batch(x=data, y=label)
-                logging.info("Model loss = " + str(loss))
+    #         print("\t Training data:")
+    #         for ad in audiotrack.spect_intervals():
+    #             logging.debug("Audio data recieved")
+    #             logging.debug("Audio of shape: " + str(ad[2].shape))
 
-            print("\t Testing data:")
-            for ad in audiotrack.spect_intervals(True):
-                logging.debug("Audio data recieved")
-                logging.debug("Audio of shape: " + str(ad[2].shape))
+    #             (w, h) = ad[2].shape
+    #             data = np.reshape(ad[2], (1, w, h, 1))
 
-                (w, h) = ad[2].shape
-                data = np.reshape(ad[2], (1, w, h, 1))
+    #             logging.debug("Data shape" + str(data.shape))
+    #             logging.debug("Labels shape" + str(label.shape))
 
-                preds = np.argmax(model.predict_on_batch(x=data))
+    #             loss = model.train_on_batch(x=data, y=label)
+    #             logging.info("Model loss = " + str(loss))
 
-                logging.info("Model preds from test: = " +
-                             str(preds) + ", actual : " + str(t.bpm))
+    #         print("\t Testing data:")
+    #         for ad in audiotrack.spect_intervals(True):
+    #             logging.debug("Audio data recieved")
+    #             logging.debug("Audio of shape: " + str(ad[2].shape))
+
+    #             (w, h) = ad[2].shape
+    #             data = np.reshape(ad[2], (1, w, h, 1))
+
+    #             preds = np.argmax(model.predict_on_batch(x=data))
+
+    #             logging.info("Model preds from test: = " +
+    #                          str(preds) + ", actual : " + str(t.bpm))
 
 
 if __name__ == '__main__':

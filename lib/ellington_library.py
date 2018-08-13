@@ -6,7 +6,7 @@ from __future__ import print_function
 from multiprocessing import Pool
 from pprint import pprint, pformat
 
-
+import hashlib
 import json
 import os
 import math
@@ -16,6 +16,7 @@ class Track:
     bpm = None
     filename = None
     trackname = None
+    digest = None
 
     @classmethod
     def from_json(cls, json):
@@ -33,6 +34,8 @@ class Track:
         self.bpm = bpm
         self.filename = filename
         self.trackname = trackname
+        self.digest = hashlib.sha256(trackname.encode('utf-8')).hexdigest()
+
 
     def __str__(self):
         return "T["+str(self.bpm) + "," + str(self.filename) + "," + str(self.trackname) + "]"
