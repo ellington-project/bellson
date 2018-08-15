@@ -45,10 +45,11 @@ class Spectrogram:
         else: 
             logging.debug("Audio data already loaded.")
 
-    def interval(self, start=60, end=70): 
+    def interval(self, start=60, sample_length=10): 
         # Compute the length of the interval (in seconds) 
-        sample_length = end-start
-        logging.info("Extracting audio interval (" + str(start) + "," + str(end) +") from " + str(sample_length) + "as a spectrogram")
+        # sample_length = end-start
+        end = start + sample_length
+        logging.info("Extracting audio interval (" + str(start) + "," + str(end) +") from " + str(sample_length) + " as a spectrogram")
         # Check for tracks shorter than the training sample length
         if self.length < sample_length:
             logging.error("Requested sample length (" + str(sample_length) + ") is longer than the audio length (" + str(self.length) + ")")
@@ -69,9 +70,11 @@ class Spectrogram:
         start_ix = int(math.floor((start / self.length) * w))
         # Compute the end in terms of the length
         # we want it to be consistent across audio file lengths
-        end_ix = start_ix + int(math.floor((sample_length / self.length) * w))
+        end_ix = start_ix + 861 # int(math.floor((sample_length / self.length) * w))
         logging.info("Extracting data in spectrogram interval (" + str(start_ix) + "," + str(end_ix) +") from " + str(w))
-        return self.data[:, start_ix:end_ix]
+        ret= self.data[:, start_ix:end_ix]
+        logging.info("Returned data shape: " + str(ret.shape))
+        return ret
 
     
     def plot_spectrogram(self): 

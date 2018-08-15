@@ -1,7 +1,8 @@
 import logging
 import copy
 import random 
-from numpy import array
+# from numpy import array
+import numpy as np
 from numpy.random import uniform
 
 from .ellington_library import EllingtonLibrary, Track
@@ -30,19 +31,20 @@ class TrackIterator:
             s = uniform(self.start, self.end)
             try:
                 logging.info("Yielding data in range (" + str(s) + "," + str(s+ self.length)+")")
-                data = self.spect.interval(s, s + self.length)
-                i = i + 1
-                yield (self.track.bpm, data)
+                data = self.spect.interval(s, self.length)
+                if data.shape == (1025, 861):
+                    i = i + 1
+                    yield (self.track.bpm, data)
             except RangeError: 
                  logging.info("Random range was invalid - continuing to try again")
         logging.info("Yielded " + str(self.samples) + " samples.")
 
 
 class LibraryIterator: 
-    library = None    
+    library = None
 
     # Initialise a generator from a library
-    def __init__(self, library, start=60, end=180, length=10, samples=10, iterations=10, batchsize=100): 
+    def __init__(self, library, start=60, end=180, length=10, samples=10, iterations=10, batchsize=10): 
         # Make a deep copy of the library so that we can shuffle it. 
         self.library = copy.deepcopy(library)
         # Cache the config values
@@ -51,10 +53,10 @@ class LibraryIterator:
         self.length = length 
         self.samples = samples
         self.iterations = iterations
-        self.batchsize = 10
+        self.batchsize = batchsize
     
     def len(self): 
-        return len(self.library.tracks) * self.samples * self.iterations * self.batchsize
+        return len(self.library.tracks) * self.samples * self.iterations
 
     def shuffle(self): 
         logging.info("Shuffling library")
@@ -74,16 +76,32 @@ class LibraryIterator:
                     yield s 
 
     def batch(self): 
-        # Yield a batch of samples 
+        # Yield an iterator over batches of samples 
+        # Iterate over the iterator: 
+        ix = 0
         inputs  = []
-        targets = []        
-        for i in range(self.batchsize):
-            p = next(self.iter())
-            targets.append(p[0])
-            inputs.append(p[1])
+        targets = []  
+        for s in self.iter(): 
+            target = s[0]
+            targets.append(target)
+
+            inp = s[1]
+            (w, h) = inp.shape
+            data = np.reshape(inp, (w, h, 1))
+            inputs.append(data)
+
+            ix = ix + 1
+
+            if( ix == self.batchsize):                 
+                inputs_arr = np.stack(inputs, axis=0)
+                targets_arr = np.stack(targets, axis=0)
+                
+                logging.info("Yielding an array of " + str(inputs_arr.shape) + " samples")
+
+                yield inputs_arr, targets_arr
+
+                inputs = []
+                targets = [] 
+                ix = 0
         
-        print("Inputs length: " + len(inputs.len))
-        return (array(inputs), array(targets))
-
-
 

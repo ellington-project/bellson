@@ -5,8 +5,6 @@ from multiprocessing import Pool
 
 from lib.ellington_library import EllingtonLibrary, Track
 from lib.audio import Audio
-from lib.generator import DataGenerator
-
 
 
 def proc(tp):
@@ -16,7 +14,7 @@ def proc(tp):
     print("Track: " + str(track.trackname) + " " + str(ix))
     audiotrack = Audio(track)
     audiotrack.load()
-    audiotrack.save_spectrogram()
+    audiotrack.save_spectrogram("data/smnp/")
 
 def main():
     logging.basicConfig(

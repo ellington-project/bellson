@@ -75,7 +75,8 @@ class Audio:
         logging.info("Saving spectrograms")
 
         # Create a figure, and configure it
-        (h, w) = self.spect.shape
+        compspect = self.spect[64:320,:]
+        (h, w) = compspect.shape
         fig = plt.figure(figsize=(w/100, h/100))
         ax = plt.subplot(111)
         ax.set_frame_on(False)
@@ -84,20 +85,23 @@ class Audio:
         ax.axes.get_yaxis().set_visible(False)
 
         # Perform some magnitue-to-frequency calculations, and write the result to the figure
-        librosa.display.specshow(self.spect, y_axis='linear')
+        librosa.display.specshow(compspect, y_axis='linear')
 
         # Save the figure, and close it
         fig.savefig("data/spect/" + self.track.trackname + ".png", dpi=100, bbox_inches='tight', pad_inches=0.0)
         plt.close(fig)
 
-    def save_spectrogram(self):
+    def save_spectrogram(self, path):
         logging.info("Saving spectrogram as numpy array") 
-        np.savez_compressed("data/np/" + self.track.digest + ".npz", spect=self.spect)
+        # Perform some compression - cut off the high frequencies, and some low ones. 
+        compspect = self.spect[64:320,:]
+        logging.info("Saving data of size: " + str(compspect.shape))
+        np.savez_compressed(path + "/" + self.track.digest + ".npz", spect=compspect)
         logging.info("Saved to file") 
     
-    def load_spectrogram(self):
+    def load_spectrogram(self, path="data/np"):
         logging.info("Loading back from file") 
-        self.spect = np.load("data/np/" + self.track.digest + ".npz")
+        self.spect = np.load(path + "/" + self.track.digest + ".npz")
         logging.info("Loaded back")
 
         
