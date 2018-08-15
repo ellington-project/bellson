@@ -14,12 +14,12 @@ def proc(tp):
     print("Track: " + str(track.trackname) + " " + str(ix))
     audiotrack = Audio(track)
     audiotrack.load()
-    audiotrack.save_spectrogram("data/smnp/")
+    audiotrack.save_spectrogram("data/small/")
 
 def main():
     logging.basicConfig(
         format='%(asctime)s %(levelname)s %(module)s %(lineno)d : %(message)s', level=logging.DEBUG)
-    el = EllingtonLibrary.from_file("data/example.el")
+    el = EllingtonLibrary.from_file("data/small.el")
 
     print("Total tracks: " + str(len(el.tracks)))
     tracks = list(enumerate(el.tracks))

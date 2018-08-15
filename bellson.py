@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 import logging
+import gc
+import objgraph
 
 import tensorflow as tf
 from tensorflow import keras
@@ -30,31 +32,37 @@ class NBatchLogger(keras.callbacks.Callback):
             for (k, v) in self.metric_cache.items():
                 val = v / self.display
                 if abs(val) > 1e-3:
-                    metrics_log += ' - %s: %.4f' % (k, val)
+                    metrics_log += ' - %s: %f' % (k, val)
                 else:
-                    metrics_log += ' - %s: %.4e' % (k, val)
+                    metrics_log += ' - %s: %f' % (k, val)
             print('step: {}/{} ... {}'.format(self.step,
                                           self.params['steps'],
                                           metrics_log))
             self.metric_cache.clear()
+            gc.collect()
+            # objgraph.show_most_common_types(limit=20)
+            # objgraph.get_new_ids()
+            
 
 def main():
     logging.basicConfig(
-        format='%(asctime)s %(levelname)s %(module)s %(lineno)d : %(message)s', level=logging.DEBUG)
-    el = EllingtonLibrary.from_file("data/example.el")
+        format='%(asctime)s %(levelname)s %(module)s %(lineno)d : %(message)s', level=logging.ERROR)
+    el = EllingtonLibrary.from_file("data/small.el")
 
     print("Training with library of size: " + str(len(el.tracks)))
 
     class_names = [str(n) for n in range(0, 400)]
 
     model = keras.Sequential([
-        keras.layers.Conv2D(32, (21, 21), strides=(3, 3), activation='relu',
-                            input_shape=(1025, 861, 1)),
-
-        keras.layers.Conv2D(32, (11, 11), strides=(3, 3), activation='relu'),
-        keras.layers.MaxPool2D(pool_size=(2, 2)),
-        keras.layers.Dropout(0.25),
+        keras.layers.Conv2D(16, (11, 1), strides=(1, 1), activation='relu',
+                            input_shape=(256, 860, 1)),
+        keras.layers.Dropout(0.25), 
+        keras.layers.Conv2D(32, (7, 1), strides=(3, 1), activation='relu'),
+        keras.layers.Dropout(0.1),
+        keras.layers.Conv2D(32, (5, 3), strides=(1, 1), activation='relu'),
+        keras.layers.Conv2D(8, (3, 3), strides=(2, 2), activation='relu'),
         keras.layers.Flatten(),
+        # keras.layers.Dense(128, activation=tf.nn.relu),
         keras.layers.Dense(128, activation=tf.nn.relu),
         keras.layers.Dense(128, activation='sigmoid'),
         keras.layers.Dense(400, activation=tf.nn.softmax)
@@ -62,23 +70,21 @@ def main():
 
     print(model.summary())
 
-    model.compile(optimizer=tf.train.AdamOptimizer(),
+    adam = tf.train.AdamOptimizer()
+    sgd = keras.optimizers.SGD(lr=0.001, decay=1e-6, momentum=0.5, nesterov=True)
+    model.compile(optimizer=sgd,
                   loss='sparse_categorical_crossentropy',
                   metrics=['accuracy'])
 
     count = str(len(el.tracks))
 
-    training_gen = LibraryIterator(el, samples=30)
-    validation_gen = LibraryIterator(el, samples=5)
-
-    # for s in training_gen.batch():
-    #     print("Expected " + str(training_gen.len()) + " samples")
-    #     print(str(s))
+    training_gen = LibraryIterator(el, samples=3, batchsize=30)
+    validation_gen = LibraryIterator(el, samples=1, batchsize=10)
 
     tfcallback = keras.callbacks.TensorBoard(log_dir='./logs',
                                            histogram_freq=1,
                                            write_grads=True,
-                                           batch_size=10)
+                                           batch_size=200)
 
     bcallback = NBatchLogger(1)
 
@@ -90,57 +96,11 @@ def main():
                         validation_data=validation_gen.batch(),
                         validation_steps=validation_gen.len(),
                         class_weight=None,
-                        max_queue_size=10,
+                        max_queue_size=60,
                         workers=1,
                         use_multiprocessing=True,
                         shuffle=True,
                         initial_epoch=0)
-
-    # model.fit_generator(libgen.iter)
-
-    # for i in range(0,10):
-    #     ix = 0
-    #     for t in el.tracks:
-    #         ix = ix + 1
-    #         print("Track: " + str(t.trackname) + " " + str(ix) + " / " + count)
-    #         print("\t Testing audio data: ")
-
-    #         audiotrack = Audio(t)
-
-    #         print("\t Training audio data: ")
-
-    #         label = np.array([t.bpm])
-
-    #         audiotrack.load()
-    #         audiotrack.save_spectrogram()
-
-    #         print("\t Training data:")
-    #         for ad in audiotrack.spect_intervals():
-    #             logging.debug("Audio data recieved")
-    #             logging.debug("Audio of shape: " + str(ad[2].shape))
-
-    #             (w, h) = ad[2].shape
-    #             data = np.reshape(ad[2], (1, w, h, 1))
-
-    #             logging.debug("Data shape" + str(data.shape))
-    #             logging.debug("Labels shape" + str(label.shape))
-
-    #             loss = model.train_on_batch(x=data, y=label)
-    #             logging.info("Model loss = " + str(loss))
-
-    #         print("\t Testing data:")
-    #         for ad in audiotrack.spect_intervals(True):
-    #             logging.debug("Audio data recieved")
-    #             logging.debug("Audio of shape: " + str(ad[2].shape))
-
-    #             (w, h) = ad[2].shape
-    #             data = np.reshape(ad[2], (1, w, h, 1))
-
-    #             preds = np.argmax(model.predict_on_batch(x=data))
-
-    #             logging.info("Model preds from test: = " +
-    #                          str(preds) + ", actual : " + str(t.bpm))
-
 
 if __name__ == '__main__':
     main()

@@ -52,15 +52,15 @@ class Spectrogram:
         logging.info("Extracting audio interval (" + str(start) + "," + str(end) +") from " + str(sample_length) + " as a spectrogram")
         # Check for tracks shorter than the training sample length
         if self.length < sample_length:
-            logging.error("Requested sample length (" + str(sample_length) + ") is longer than the audio length (" + str(self.length) + ")")
+            logging.warn("Requested sample length (" + str(sample_length) + ") is longer than the audio length (" + str(self.length) + ")")
             raise RangeError("Requested sample length (" + str(sample_length) + ") is longer than the audio length (" + str(self.length) + ")")
         # Check for samples that go beyond the end of the track        
         if end >= self.length or start >= self.length: 
-            logging.error("Requested interval (" + str(end) +"," + str(start) +") goes beyond the end of the track (" + str(self.length) + ")")
+            logging.warn("Requested interval (" + str(end) +"," + str(start) +") goes beyond the end of the track (" + str(self.length) + ")")
             raise RangeError("Requested interval (" + str(end) +"," + str(start) +") goes beyond the end of the track (" + str(self.length) + ")")
         # Check for samples that go beyond the start of the track
         if end < 0 or start < 0: 
-            logging.error("Requested interval (" + str(end) +"," + str(start) +") goes beyond the start of the track")
+            logging.warn("Requested interval (" + str(end) +"," + str(start) +") goes beyond the start of the track")
             raise RangeError("Requested interval (" + str(end) +"," + str(start) +") goes beyond the start of the track")
         # Check for samples that 
         # Get the size of the spectrogram data
@@ -70,7 +70,7 @@ class Spectrogram:
         start_ix = int(math.floor((start / self.length) * w))
         # Compute the end in terms of the length
         # we want it to be consistent across audio file lengths
-        end_ix = start_ix + 861 # int(math.floor((sample_length / self.length) * w))
+        end_ix = start_ix + 860 # int(math.floor((sample_length / self.length) * w))
         logging.info("Extracting data in spectrogram interval (" + str(start_ix) + "," + str(end_ix) +") from " + str(w))
         ret= self.data[:, start_ix:end_ix]
         logging.info("Returned data shape: " + str(ret.shape))

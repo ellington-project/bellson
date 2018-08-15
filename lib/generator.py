@@ -4,6 +4,7 @@ import random
 # from numpy import array
 import numpy as np
 from numpy.random import uniform
+import gc
 
 from .ellington_library import EllingtonLibrary, Track
 from .spectrogram import Spectrogram, RangeError
@@ -15,7 +16,7 @@ class TrackIterator:
         # Set the values, and load the spectrogram
         self.track = track
         self.spect = Spectrogram(track)
-        self.spect.load()
+        self.spect.load(folder="data/small/")
 
         # Set the config values
         self.start = start 
@@ -32,17 +33,17 @@ class TrackIterator:
             try:
                 logging.info("Yielding data in range (" + str(s) + "," + str(s+ self.length)+")")
                 data = self.spect.interval(s, self.length)
-                if data.shape == (1025, 861):
+                if data.shape == (256, 860):
                     i = i + 1
                     yield (self.track.bpm, data)
             except RangeError: 
-                 logging.info("Random range was invalid - continuing to try again")
+                 logging.warn("Random range was invalid - continuing to try again")
         logging.info("Yielded " + str(self.samples) + " samples.")
 
 
 class LibraryIterator: 
     library = None
-
+    
     # Initialise a generator from a library
     def __init__(self, library, start=60, end=180, length=10, samples=10, iterations=10, batchsize=10): 
         # Make a deep copy of the library so that we can shuffle it. 
@@ -64,7 +65,7 @@ class LibraryIterator:
     
     def iter(self): 
         # Go across <self.iterations> iterations
-        for i in range(0, self.iterations):
+        while True:
             # Start by shuffling the library
             self.shuffle()
             # Iterate over the tracks, and get 20 random samples. 
@@ -72,8 +73,9 @@ class LibraryIterator:
                 logging.info("Yielding spectrogram data for " + t.trackname)
                 ti = TrackIterator(t, self.start, self.end, self.length, self.samples)
                 # Generate <samples> random samples from the track, and yield them
-                for s in ti.iter(): 
+                for s in ti.iter():                     
                     yield s 
+                del ti
 
     def batch(self): 
         # Yield an iterator over batches of samples 
@@ -100,6 +102,9 @@ class LibraryIterator:
 
                 yield inputs_arr, targets_arr
 
+                del inputs 
+                del targets
+                gc.collect()
                 inputs = []
                 targets = [] 
                 ix = 0

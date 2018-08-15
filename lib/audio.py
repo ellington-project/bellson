@@ -91,7 +91,7 @@ class Audio:
         fig.savefig("data/spect/" + self.track.trackname + ".png", dpi=100, bbox_inches='tight', pad_inches=0.0)
         plt.close(fig)
 
-    def save_spectrogram(self, path):
+    def save_spectrogram(self, path="data/np"):
         logging.info("Saving spectrogram as numpy array") 
         # Perform some compression - cut off the high frequencies, and some low ones. 
         compspect = self.spect[64:320,:]
