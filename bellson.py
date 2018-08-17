@@ -153,19 +153,13 @@ def main():
                 print("Predicting batch")
                 results = model.predict_on_batch(train).flatten().tolist()
                 
-
-                results_log = ''
                 d = {} 
                 for (e, r) in zip(target, results): 
                     d.setdefault(e * 400, []).append(r * 400)
 
                 for k, v in d.items(): 
-                    vss = ','.join('%.4f' % i for i in v)
+                    vss = ', '.join('%.2f' % i for i in v)
                     print("{} : [{}] ".format(k, vss))
-
-                # for (r, e) in zip(results, target): 
-                #     results_log += '(%.4f, %.4f) ' % (e * 400, r * 400)
-                # print('Targets - Predictions: [{}]'.format(results_log) )
 
                 gc.collect()
 
