@@ -35,7 +35,7 @@ class NBatchLogger(keras.callbacks.Callback):
                     metrics_log += ' - %s: %.4f' % (k, val)
                 else:
                     metrics_log += ' - %s: %.4e' % (k, val)
-            print('step: {}/{} ... {}'.format(self.step,
+            print('step: {}/{} ::{}'.format(self.step,
                                           self.params['steps'],
                                           metrics_log))
             self.metric_cache.clear()
@@ -97,23 +97,24 @@ def main():
     sgd = keras.optimizers.SGD(lr=0.001, decay=1e-6, momentum=0.9, nesterov=True)
     model.compile(optimizer=adam,
                   loss='mse',
-                  metrics=['mae', 'msle', 'mape', 'poisson', 'acc'])
+                  metrics=['mae', 'msle', 'mape'])
 
-    training_gen = LibraryIterator(el, samples=256, batchsize=16)
-    validation_gen = LibraryIterator(el, samples=64, batchsize=4)
+    training_gen = LibraryIterator(el, samples=8, batchsize=8)
+    validation_gen = LibraryIterator(el, samples=2, batchsize=2)
 
     tfcallback = keras.callbacks.TensorBoard(log_dir='./logs',
                                            histogram_freq=0,
                                            write_grads=True,
                                            write_graph=False, 
                                            write_images=False, 
-                                           batch_size=10)
-
+                                           batch_size=16)
     bcallback = NBatchLogger(1)
-    model_file_name= 'models/bpm-model' + '-{epoch:03d}-{val_loss:.5f}.h5'
+    model_file_name = 'models/bpm-model' + '-{epoch:03d}-{val_loss:.5f}.h5'
+    
+
     cplogger = keras.callbacks.ModelCheckpoint(model_file_name, monitor='val_mean_absolute_error', verbose=1, save_best_only=False)
 
-    epochs = 5 
+    epochs = 50
 
     train_generator = False
     if train_generator: 
@@ -131,19 +132,41 @@ def main():
                             shuffle=True,
                             initial_epoch=0)
     else:
-        for i in range(0, epochs): 
+        for epoch in range(0, epochs): 
             batch = 0
+            model.save('models/bpm-model-epoch%03d.h5' % epoch)
             for (train, target) in training_gen.batch(): 
                 batch = batch + 1
                 print("Training batch " + str(batch))
                 metrics = model.train_on_batch(x=train, y=target)
-                for (m, name) in zip(metrics, model.metrics_names): 
-                    print(name + " -- " + str(m)) 
+
+                metrics_log = ''
+                for (val, k) in zip(metrics, model.metrics_names): 
+                    if abs(val) > 1e-3:
+                        metrics_log += ' - %s: %.4f' % (k, val)
+                    else:
+                        metrics_log += ' - %s: %.4e' % (k, val)
+                print('step: {}/{} ::{}'.format(batch,
+                                            training_gen.len(),
+                                            metrics_log))
                 
                 print("Predicting batch")
                 results = model.predict_on_batch(train).flatten().tolist()
-                for (r, e) in zip(results, target): 
-                    print("Expected: " + str(e*400) + " got: " + str(r*400))
+                
+
+                results_log = ''
+                d = {} 
+                for (e, r) in zip(target, results): 
+                    d.setdefault(e * 400, []).append(r * 400)
+
+                for k, v in d.items(): 
+                    vss = ','.join('%.4f' % i for i in v)
+                    print("{} : [{}] ".format(k, vss))
+
+                # for (r, e) in zip(results, target): 
+                #     results_log += '(%.4f, %.4f) ' % (e * 400, r * 400)
+                # print('Targets - Predictions: [{}]'.format(results_log) )
+
                 gc.collect()
 
 

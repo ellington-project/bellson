@@ -57,7 +57,7 @@ class LibraryIterator:
         self.batchsize = batchsize
     
     def len(self): 
-        return len(self.library.tracks) * self.samples
+        return len(self.library.tracks) * self.samples / self.batchsize
 
     def shuffle(self): 
         logging.info("Shuffling library")
