@@ -16,7 +16,7 @@ class TrackIterator:
         # Set the values, and load the spectrogram
         self.track = track
         self.spect = Spectrogram(track)
-        self.spect.load(folder="data/small/")
+        self.spect.load(folder="data/smnp/")
 
         # Set the config values
         self.start = start 
@@ -57,7 +57,7 @@ class LibraryIterator:
         self.batchsize = batchsize
     
     def len(self): 
-        return len(self.library.tracks) * self.samples * self.iterations
+        return len(self.library.tracks) * self.samples
 
     def shuffle(self): 
         logging.info("Shuffling library")
@@ -84,7 +84,7 @@ class LibraryIterator:
         inputs  = []
         targets = []  
         for s in self.iter(): 
-            target = s[0]
+            target = float(s[0]) / 400.0
             targets.append(target)
 
             inp = s[1]
