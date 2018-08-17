@@ -42,7 +42,42 @@ class NBatchLogger(keras.callbacks.Callback):
             gc.collect()
             # objgraph.show_most_common_types(limit=20)
             # objgraph.get_new_ids()
-            
+
+def build_model(input_time_dim, input_freq_dim): 
+    input_img = keras.layers.Input(shape=(input_freq_dim, input_time_dim, 1))
+
+    base = keras.layers.Conv2D(24, kernel_size = (5, 5), strides=(2,2), padding='same', activation='relu')(input_img)
+    base = keras.layers.BatchNormalization()(base)
+
+    base = keras.layers.Conv2D(36, kernel_size = (5, 5), strides=(2,2), padding='same', activation='relu')(base)
+    base = keras.layers.BatchNormalization()(base)
+
+    base = keras.layers.Conv2D(48, kernel_size = (5, 5), strides=(2,2), padding='same', activation='relu')(base)
+    base = keras.layers.BatchNormalization()(base)
+
+    base = keras.layers.Conv2D(64, kernel_size = (3, 3), strides=(1,1), padding='same', activation='relu')(base)
+    base = keras.layers.BatchNormalization()(base)
+
+    base = keras.layers.Conv2D(64, kernel_size = (3, 3), strides=(1,1), padding='same', activation='relu')(base)
+    base = keras.layers.BatchNormalization()(base)
+
+    flat = keras.layers.Flatten()(base)
+
+    dense = keras.layers.Dense(500, activation='relu')(flat) 
+    # dense = keras.layers.Dropout(0.5)(dense)
+    dense = keras.layers.BatchNormalization()(dense)
+
+    dense = keras.layers.Dense(100, activation='relu')(dense) 
+    # dense = keras.layers.Dropout(0.25)(dense)
+    dense = keras.layers.BatchNormalization()(dense)
+
+    dense = keras.layers.Dense(20, activation='relu')(dense) 
+    # dense = keras.layers.Dropout(0.5)(dense)
+    dense = keras.layers.BatchNormalization()(dense)
+    
+    output = keras.layers.Dense(1)(dense)
+
+    return keras.Model(inputs = input_img, outputs = output)            
 
 def main():
     logging.basicConfig(
@@ -51,72 +86,66 @@ def main():
 
     print("Training with library of size: " + str(len(el.tracks)))
 
-    num_filters = 32
-
     input_time_dim=860
     input_freq_dim=256
 
-    model = keras.Sequential([
-        keras.layers.Conv2D(num_filters, (3,1), strides=(1, 1), activation='relu',
-                            input_shape=(input_freq_dim, input_time_dim, 1)),
-        keras.layers.MaxPool2D(pool_size=(3, 2)),
-        keras.layers.Dropout(0.01),
-
-        keras.layers.Conv2D(num_filters*2, (3, 1), strides=(1, 1), activation='relu'),
-        keras.layers.MaxPool2D(pool_size=(3, 2)),
-        keras.layers.Dropout(0.01),
-
-        keras.layers.Conv2D(num_filters*2*2, (3, 1), strides=(1, 1), activation='relu'),
-        keras.layers.MaxPool2D(pool_size=(3, 2)),
-        keras.layers.Dropout(0.01),
-
-        # keras.layers.Reshape((input_time_dim, 26 * num_filters)), 
-
-        # keras.layers.TimeDistributed(keras.layers.Dense(256, activation='relu')), 
-        # keras.layers.TimeDistributed(keras.layers.Dense(8, activation='relu')), 
-
-        keras.layers.Flatten(),
-
-        keras.layers.Dense(400, activation=tf.nn.relu),
-        keras.layers.Dense(100, activation=tf.nn.relu),
-        keras.layers.Dense(20, activation='sigmoid'),
-        keras.layers.Dense(1), 
-    ])
+    model = build_model(input_time_dim, input_freq_dim)
 
     print(model.summary())
 
-    adam = tf.train.AdamOptimizer()
-    sgd = keras.optimizers.SGD(lr=0.001, decay=1e-6, momentum=0.5, nesterov=True)
+    adam = tf.train.AdamOptimizer(learning_rate=1e-04)
+    sgd = keras.optimizers.SGD(lr=0.001, decay=1e-6, momentum=0.9, nesterov=True)
     model.compile(optimizer=adam,
-                  loss='mean_squared_error',
-                  metrics=['mae', 'msle', 'mape', 'poisson'])
+                  loss='mse',
+                  metrics=['mae', 'msle', 'mape', 'poisson', 'acc'])
 
-    count = str(len(el.tracks))
-
-    training_gen = LibraryIterator(el, samples=5, batchsize=10)
-    validation_gen = LibraryIterator(el, samples=2, batchsize=4)
+    training_gen = LibraryIterator(el, samples=256, batchsize=16)
+    validation_gen = LibraryIterator(el, samples=64, batchsize=4)
 
     tfcallback = keras.callbacks.TensorBoard(log_dir='./logs',
                                            histogram_freq=0,
                                            write_grads=True,
-                                           batch_size=100)
+                                           write_graph=False, 
+                                           write_images=False, 
+                                           batch_size=10)
 
     bcallback = NBatchLogger(1)
-    csv_logger = keras.callbacks.CSVLogger('training.log')
+    model_file_name= 'models/bpm-model' + '-{epoch:03d}-{val_loss:.5f}.h5'
+    cplogger = keras.callbacks.ModelCheckpoint(model_file_name, monitor='val_mean_absolute_error', verbose=1, save_best_only=False)
 
-    model.fit_generator(training_gen.batch(),
-                        steps_per_epoch=training_gen.len(),
-                        epochs=5,
-                        verbose=2,
-                        callbacks=[tfcallback, bcallback, csv_logger],
-                        # validation_data=validation_gen.batch(),
-                        # validation_steps=validation_gen.len(),
-                        class_weight=None,
-                        max_queue_size=60,
-                        workers=1,
-                        use_multiprocessing=True,
-                        shuffle=True,
-                        initial_epoch=0)
+    epochs = 5 
+
+    train_generator = False
+    if train_generator: 
+        model.fit_generator(training_gen.batch(),
+                            steps_per_epoch=training_gen.len(),
+                            epochs=epochs,
+                            verbose=2,
+                            callbacks=[tfcallback, bcallback, cplogger],
+                            validation_data=validation_gen.batch(),
+                            validation_steps=validation_gen.len(),
+                            class_weight=None,
+                            max_queue_size=60,
+                            workers=1,
+                            use_multiprocessing=True,
+                            shuffle=True,
+                            initial_epoch=0)
+    else:
+        for i in range(0, epochs): 
+            batch = 0
+            for (train, target) in training_gen.batch(): 
+                batch = batch + 1
+                print("Training batch " + str(batch))
+                metrics = model.train_on_batch(x=train, y=target)
+                for (m, name) in zip(metrics, model.metrics_names): 
+                    print(name + " -- " + str(m)) 
+                
+                print("Predicting batch")
+                results = model.predict_on_batch(train).flatten().tolist()
+                for (r, e) in zip(results, target): 
+                    print("Expected: " + str(e*400) + " got: " + str(r*400))
+                gc.collect()
+
 
 if __name__ == '__main__':
     main()

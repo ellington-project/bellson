@@ -89,7 +89,8 @@ class LibraryIterator:
 
             inp = s[1]
             (w, h) = inp.shape
-            data = np.reshape(inp, (w, h, 1))
+            maxv = np.max(np.abs(inp))
+            data = np.reshape(inp, (w, h, 1)) / maxv
             inputs.append(data)
 
             ix = ix + 1
