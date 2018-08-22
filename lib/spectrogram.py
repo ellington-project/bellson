@@ -70,7 +70,7 @@ class Spectrogram:
         start_ix = int(math.floor((start / self.length) * w))
         # Compute the end in terms of the length
         # we want it to be consistent across audio file lengths
-        end_ix = start_ix + 860 # int(math.floor((sample_length / self.length) * w))
+        end_ix = start_ix + 1720 # int(math.floor((sample_length / self.length) * w))
         logging.info("Extracting data in spectrogram interval (" + str(start_ix) + "," + str(end_ix) +") from " + str(w))
         ret= self.data[:, start_ix:end_ix]
         logging.info("Returned data shape: " + str(ret.shape))

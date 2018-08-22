@@ -33,7 +33,7 @@ class TrackIterator:
             try:
                 logging.info("Yielding data in range (" + str(s) + "," + str(s+ self.length)+")")
                 data = self.spect.interval(s, self.length)
-                if data.shape == (256, 860):
+                if data.shape == (256, 1720):
                     i = i + 1
                     yield (self.track.bpm, data)
             except RangeError: 
@@ -57,7 +57,7 @@ class LibraryIterator:
         self.batchsize = batchsize
     
     def len(self): 
-        return len(self.library.tracks) * self.samples / self.batchsize
+        return len(self.library.tracks) * self.samples * self.iterations / self.batchsize
 
     def shuffle(self): 
         logging.info("Shuffling library")
@@ -65,7 +65,7 @@ class LibraryIterator:
     
     def iter(self): 
         # Go across <self.iterations> iterations
-        while True:
+        for i in range(0, self.iterations):
             # Start by shuffling the library
             self.shuffle()
             # Iterate over the tracks, and get 20 random samples. 

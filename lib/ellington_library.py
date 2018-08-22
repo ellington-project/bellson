@@ -25,7 +25,7 @@ class Track:
         if metadata is not None and filename is not None:
             bpm = metadata['bpm']
             trackname = metadata['name']
-            if bpm is not None and bpm is not 0 and trackname is not None:
+            if bpm is not None and bpm > 100 and trackname is not None:
                 return Track(bpm, filename, trackname)
 
         return None
@@ -48,14 +48,19 @@ class EllingtonLibrary:
     tracks = []
 
     @classmethod
-    def from_file(cls, filename):
+    def from_file(cls, filename, maxsize=None):
         with open(filename) as f:
             json_data = json.load(f)
-            return EllingtonLibrary(json_data)
+            return EllingtonLibrary(json_data, maxsize)
 
-    def __init__(self, json):
-        self.tracks = list(filter(lambda t: t is not None,
+    def __init__(self, json, maxsize=None):
+        t = list(filter(lambda t: t is not None,
                                   map(Track.from_json, json['tracks'])))
+        if maxsize is not None: 
+            self.tracks = t[0:maxsize]
+        else:
+            self.tracks = t
+
 
     def __str__(self):
         return str(self.tracks)
