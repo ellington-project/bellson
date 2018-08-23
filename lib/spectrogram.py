@@ -4,6 +4,8 @@ import numpy as np
 import math
 import logging
 import os
+import pickle
+from tensorflow.python.lib.io import file_io
 
 from .ellington_library import Track
 
@@ -33,15 +35,16 @@ class Spectrogram:
         # Load the spectrogram from a pre-written file
         # This test is garbage.
         if (not self.loaded): 
-            filename = folder + self.track.digest + ".npz"
+            filename = folder + "/" + self.track.digest + ".npz"
             logging.debug("Loading spectrogram from file " + filename) 
-            if os.path.exists(filename): 
-                with np.load(folder + self.track.digest + ".npz") as npzf:
-                    self.data = npzf['spect']
-                    logging.debug("Loaded spectrogram data")
-            else: 
-                logging.error("Could not load spectrogram file - have they been generated?")
-                raise Exception("Could not load spectrogram data - has it been generated?")
+            f = file_io.FileIO(filename, mode='r')
+            # if os.path.exists(filename): 
+            with pickle.load(f) as npzf:
+                self.data = npzf['spect']
+                logging.debug("Loaded spectrogram data")
+            # else: 
+                # logging.error("Could not load spectrogram file - have they been generated?")
+                # raise Exception("Could not load spectrogram data - has it been generated?")
         else: 
             logging.debug("Audio data already loaded.")
 

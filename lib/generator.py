@@ -12,7 +12,7 @@ from .spectrogram import Spectrogram, RangeError
 class TrackIterator: 
     track = None
     spect = None
-    def __init__(self, track, start=60, end=180, length=10, samples=10): 
+    def __init__(self, track, folder="data/smnp/", start=60, end=180, length=10, samples=10): 
         # Set the values, and load the spectrogram
         self.track = track
         self.spect = Spectrogram(track)
@@ -45,7 +45,7 @@ class LibraryIterator:
     library = None
     
     # Initialise a generator from a library
-    def __init__(self, library, start=60, end=180, length=10, samples=10, iterations=10, batchsize=10): 
+    def __init__(self, library, folder="data/smnp/", start=60, end=180, length=10, samples=10, iterations=10, batchsize=10): 
         # Make a deep copy of the library so that we can shuffle it. 
         self.library = copy.deepcopy(library)
         # Cache the config values
@@ -71,7 +71,7 @@ class LibraryIterator:
             # Iterate over the tracks, and get 20 random samples. 
             for t in self.library.tracks:
                 logging.debug("Yielding spectrogram data for " + t.trackname)
-                ti = TrackIterator(t, self.start, self.end, self.length, self.samples)
+                ti = TrackIterator(t, self.folder, self.start, self.end, self.length, self.samples)
                 # Generate <samples> random samples from the track, and yield them
                 for s in ti.iter():                     
                     yield s 

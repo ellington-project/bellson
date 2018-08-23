@@ -174,9 +174,9 @@ def main(data_dir, ellington_lib, job_dir):
     print("Validating with library of size: " + str(len(valid_lib.tracks)))
 
     training_gen = LibraryIterator(
-        train_lib, samples=32, batchsize=32, start=30, end=150, iterations=1)
+        train_lib, data_dir, samples=32, batchsize=32, start=30, end=150, iterations=1)
     validation_gen = LibraryIterator(
-        valid_lib, samples=8, batchsize=64, start=30, end=150, iterations=1)
+        valid_lib, data_dir, samples=8, batchsize=64, start=30, end=150, iterations=1)
 
     input_time_dim = 1720
     input_freq_dim = 256
