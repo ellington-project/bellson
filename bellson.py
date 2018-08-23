@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import argparse
 import logging
 import gc
 import objgraph
@@ -161,27 +162,27 @@ def model3(input_time_dim, input_freq_dim, l1filters=64, l2filters=64, d1width=1
     return keras.Model(inputs=input_img, outputs=output)
 
 
-def main():
+def main(data_dir, ellington_lib, job_dir):
     logging.basicConfig(
-        format='%(asctime)s %(levelname)s %(module)s %(lineno)d : %(message)s', level=logging.ERROR)
+        format='%(asctime)s %(levelname)s %(module)s %(lineno)d : %(message)s', level=logging.INFO)
 
     # Set up the data input etc.
-    train_lib = EllingtonLibrary.from_file("data/example.el", 2)
-    valid_lib = EllingtonLibrary.from_file("data/example.el", 2)
+    train_lib = EllingtonLibrary.from_file("data/example.el")
+    valid_lib = EllingtonLibrary.from_file("data/example.el")
 
     print("Training with library of size: " + str(len(train_lib.tracks)))
     print("Validating with library of size: " + str(len(valid_lib.tracks)))
 
     training_gen = LibraryIterator(
-        train_lib, samples=32, batchsize=32, start=30, end=150)
+        train_lib, samples=32, batchsize=32, start=30, end=150, iterations=1)
     validation_gen = LibraryIterator(
-        valid_lib, samples=8, batchsize=8 * len(valid_lib.tracks), start=30, end=150, iterations=1)
+        valid_lib, samples=8, batchsize=64, start=30, end=150, iterations=1)
 
     input_time_dim = 1720
     input_freq_dim = 256
 
     # Create the model, print info
-    model = model3(input_time_dim, input_freq_dim, 128, 128)
+    model = model3(input_time_dim, input_freq_dim)
     print(model.summary())
 
     # Compile the model
@@ -210,7 +211,7 @@ def main():
         batch = 0
         model.save('models/bpm-model-epoch%03d.h5' % epoch)
         model.save('models/bpm-model.h5')
-        print("Epoch: %d / %d" % (epoch, epochs))
+        logging.info("Epoch: %d / %d" % (epoch, epochs))
         for (train, target) in training_gen.batch():
             batch = batch + 1
             metrics = model.train_on_batch(x=train, y=target)
@@ -221,13 +222,13 @@ def main():
                     metrics_log += ' - %s: %.4f' % (k, val)
                 else:
                     metrics_log += ' - %s: %.4e' % (k, val)
-            print('step: {}/{} ::{}'.format(batch,
+            logging.info('step: {}/{} ::{}'.format(batch,
                                             training_gen.len(),
                                             metrics_log))
             gc.collect()
 
         for (train, target) in validation_gen.batch():
-            print("Predicting batch")
+            logging.info("Predicting batch")
             results = model.predict_on_batch(train).flatten().tolist()
 
             d = {}
@@ -237,7 +238,7 @@ def main():
             for k, v in d.items():
                 mean = np.mean(v)
                 vss = ', '.join('%.2f' % i for i in v[0:10])
-                print("{:0.4f} : {:0.4f} :: [{}] ".format(k, mean, vss))
+                logging.info("{:0.4f} : {:0.4f} :: [{}] ".format(k, mean, vss))
 
             target_mean = np.mean(target) * 400
             target_std = np.std(target) * 400
@@ -245,11 +246,17 @@ def main():
             result_mean = np.mean(results) * 400
             result_std = np.std(results) * 400
 
-            print("Target: %0.4f, %0.4f" % (target_mean, target_std))
-            print("Result: %0.4f, %0.4f" % (result_mean, result_std))
+            logging.info("Target: %0.4f, %0.4f" % (target_mean, target_std))
+            logging.info("Result: %0.4f, %0.4f" % (result_mean, result_std))
 
             gc.collect()
 
 
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--data-dir', help='Path to training data, in the form of compressed numpy arrays')
+    parser.add_argument('--ellington-lib', help='The ellington library from which to read track names and BPMs')
+    parser.add_argument('--job-dir', help='The directory to export the model, and store temp files')
+    args = parser.parse_args()
+    arguments = args.__dict__
+    main(**arguments)

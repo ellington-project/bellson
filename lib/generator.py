@@ -31,14 +31,14 @@ class TrackIterator:
         while i < self.samples: 
             s = uniform(self.start, self.end)
             try:
-                logging.info("Yielding data in range (" + str(s) + "," + str(s+ self.length)+")")
+                logging.debug("Yielding data in range (" + str(s) + "," + str(s+ self.length)+")")
                 data = self.spect.interval(s, self.length)
                 if data.shape == (256, 1720):
                     i = i + 1
                     yield (self.track.bpm, data)
             except RangeError: 
-                 logging.warn("Random range was invalid - continuing to try again")
-        logging.info("Yielded " + str(self.samples) + " samples.")
+                 logging.debug("Random range was invalid - continuing to try again")
+        logging.debug("Yielded " + str(self.samples) + " samples.")
 
 
 class LibraryIterator: 
@@ -60,7 +60,7 @@ class LibraryIterator:
         return len(self.library.tracks) * self.samples * self.iterations / self.batchsize
 
     def shuffle(self): 
-        logging.info("Shuffling library")
+        logging.debug("Shuffling library")
         random.shuffle(self.library.tracks)
     
     def iter(self): 
@@ -70,7 +70,7 @@ class LibraryIterator:
             self.shuffle()
             # Iterate over the tracks, and get 20 random samples. 
             for t in self.library.tracks:
-                logging.info("Yielding spectrogram data for " + t.trackname)
+                logging.debug("Yielding spectrogram data for " + t.trackname)
                 ti = TrackIterator(t, self.start, self.end, self.length, self.samples)
                 # Generate <samples> random samples from the track, and yield them
                 for s in ti.iter():                     
@@ -99,7 +99,7 @@ class LibraryIterator:
                 inputs_arr = np.stack(inputs, axis=0)
                 targets_arr = np.stack(targets, axis=0)
                 
-                logging.info("Yielding an array of " + str(inputs_arr.shape) + " samples")
+                logging.debug("Yielding an array of " + str(inputs_arr.shape) + " samples")
 
                 yield inputs_arr, targets_arr
 
