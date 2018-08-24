@@ -10,9 +10,9 @@ from tensorflow import keras
 import numpy as np
 import matplotlib.pyplot as plt
 
-from lib.ellington_library import EllingtonLibrary, Track
-from lib.audio import Audio
-from lib.generator import LibraryIterator, TrackIterator
+from ellington_library import EllingtonLibrary, Track
+from audio import Audio
+from generator import LibraryIterator, TrackIterator
 
 
 class NBatchLogger(keras.callbacks.Callback):
@@ -162,13 +162,13 @@ def model3(input_time_dim, input_freq_dim, l1filters=64, l2filters=64, d1width=1
     return keras.Model(inputs=input_img, outputs=output)
 
 
-def main(data_dir, ellington_lib, job_dir):
+def main(data_dir="data/smnp/", ellington_lib="data/example.el", job_dir="logs"):
     logging.basicConfig(
         format='%(asctime)s %(levelname)s %(module)s %(lineno)d : %(message)s', level=logging.INFO)
 
     # Set up the data input etc.
-    train_lib = EllingtonLibrary.from_file("data/example.el")
-    valid_lib = EllingtonLibrary.from_file("data/example.el")
+    train_lib = EllingtonLibrary.from_file(ellington_lib)
+    valid_lib = EllingtonLibrary.from_file(ellington_lib)
 
     print("Training with library of size: " + str(len(train_lib.tracks)))
     print("Validating with library of size: " + str(len(valid_lib.tracks)))
@@ -254,9 +254,9 @@ def main(data_dir, ellington_lib, job_dir):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data-dir', help='Path to training data, in the form of compressed numpy arrays')
-    parser.add_argument('--ellington-lib', help='The ellington library from which to read track names and BPMs')
-    parser.add_argument('--job-dir', help='The directory to export the model, and store temp files')
+    parser.add_argument('--data-dir', required=True, help='Path to training data, in the form of compressed numpy arrays')
+    parser.add_argument('--ellington-lib', required=True, help='The ellington library from which to read track names and BPMs')
+    parser.add_argument('--job-dir', required=True, help='The directory to export the model, and store temp files')
     args = parser.parse_args()
     arguments = args.__dict__
     main(**arguments)

@@ -16,7 +16,8 @@ class TrackIterator:
         # Set the values, and load the spectrogram
         self.track = track
         self.spect = Spectrogram(track)
-        self.spect.load(folder="data/smnp/")
+        self.folder = folder
+        self.spect.load(self.folder)
 
         # Set the config values
         self.start = start 
@@ -49,6 +50,7 @@ class LibraryIterator:
         # Make a deep copy of the library so that we can shuffle it. 
         self.library = copy.deepcopy(library)
         # Cache the config values
+        self.folder = folder
         self.start = start 
         self.end = end 
         self.length = length 

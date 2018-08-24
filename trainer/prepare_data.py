@@ -3,8 +3,8 @@ import logging
 
 from multiprocessing import Pool
 
-from lib.ellington_library import EllingtonLibrary, Track
-from lib.audio import Audio
+from bellson.lib.ellington_library import EllingtonLibrary, Track
+from bellson.lib.audio import Audio
 
 
 def proc(tp):

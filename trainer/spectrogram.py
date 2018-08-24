@@ -4,8 +4,10 @@ import numpy as np
 import math
 import logging
 import os
+from io import BytesIO
 import pickle
 from tensorflow.python.lib.io import file_io
+from tensorflow import __version__ as tf_version
 
 from .ellington_library import Track
 
@@ -37,9 +39,14 @@ class Spectrogram:
         if (not self.loaded): 
             filename = folder + "/" + self.track.digest + ".npz"
             logging.debug("Loading spectrogram from file " + filename) 
-            f = file_io.FileIO(filename, mode='r')
+            if tf_version >= '1.1.0':
+                mode = 'rb'
+            else: # for TF version 1.0
+                mode = 'r'
+            f = file_io.FileIO(filename, mode)
+            
             # if os.path.exists(filename): 
-            with pickle.load(f) as npzf:
+            with np.load(BytesIO(f.read())) as npzf:
                 self.data = npzf['spect']
                 logging.debug("Loaded spectrogram data")
             # else: 
