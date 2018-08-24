@@ -6,6 +6,8 @@ import objgraph
 
 import tensorflow as tf
 from tensorflow import keras
+from tensorflow.python.lib.io import file_io
+
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -209,8 +211,15 @@ def main(data_dir="data/smnp/", ellington_lib="data/example.el", job_dir="logs")
     # Star training!
     for epoch in range(0, epochs):
         batch = 0
-        model.save('models/bpm-model-epoch%03d.h5' % epoch)
-        model.save('models/bpm-model.h5')
+        # Save the model locally
+        model.save('model.h5')
+
+        # Save the model to the Cloud Storage bucket's jobs directory
+        print("Saving to : " + job_dir)
+        with file_io.FileIO('model.h5', mode='r') as input_f:
+            with file_io.FileIO(job_dir + '-model.h5', mode='w+') as output_f:
+                output_f.write(input_f.read())
+                
         logging.info("Epoch: %d / %d" % (epoch, epochs))
         for (train, target) in training_gen.batch():
             batch = batch + 1
