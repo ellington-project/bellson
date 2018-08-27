@@ -1,5 +1,5 @@
 import librosa
-import librosa.display
+# import librosa.display
 import numpy as np
 import math
 import logging
@@ -9,7 +9,7 @@ import pickle
 from tensorflow.python.lib.io import file_io
 from tensorflow import __version__ as tf_version
 
-from .ellington_library import Track
+from trainer.ellington_library import Track
 
 SAMPLE_LENGTH = 10
 SAMPLE_START = 60
@@ -25,13 +25,14 @@ class RangeError(Exception):
 class Spectrogram:
     # Meta, and file information
     track = None
-    length = None
+    # length = None
+    samples = None
     data = None
-    loaded = False
+    loaded = False    
 
     def __init__(self, etrack):
         self.track = etrack
-        self.length = librosa.core.get_duration(filename=etrack.filename)    
+        # self.length = librosa.core.get_duration(filename=etrack.filename)    
 
     def load(self, folder="data/np/"): 
         # Load the spectrogram from a pre-written file
@@ -45,43 +46,45 @@ class Spectrogram:
                 mode = 'r'
             f = file_io.FileIO(filename, mode)
             
-            # if os.path.exists(filename): 
             with np.load(BytesIO(f.read())) as npzf:
                 self.data = npzf['spect']
                 logging.debug("Loaded spectrogram data")
-            # else: 
-                # logging.error("Could not load spectrogram file - have they been generated?")
-                # raise Exception("Could not load spectrogram data - has it been generated?")
+
+            self.samples = self.data.shape[1]
+
         else: 
             logging.debug("Audio data already loaded.")
 
-    def interval(self, start=60, sample_length=10): 
+    def interval(self, start=60, samples=1720): 
         # Compute the length of the interval (in seconds) 
         # sample_length = end-start
-        end = start + sample_length
-        logging.debug("Extracting audio interval (" + str(start) + "," + str(end) +") from " + str(sample_length) + " as a spectrogram")
+        # end = start + sample_length
+        # logging.debug("Extracting audio interval (" + str(start) + "," + str(end) +") from " + str(sample_length) + " as a spectrogram")
+        start_ix = int(start * 86) # hardcode this for now
+        end_ix = start_ix + samples
         # Check for tracks shorter than the training sample length
-        if self.length < sample_length:
-            logging.debug("Requested sample length (" + str(sample_length) + ") is longer than the audio length (" + str(self.length) + ")")
-            raise RangeError("Requested sample length (" + str(sample_length) + ") is longer than the audio length (" + str(self.length) + ")")
+        if self.samples < samples:
+            logging.debug("Requested sample length (" + str(self.samples) + ") is longer than the audio length (" + str(samples) + ")")
+            raise RangeError("Requested sample length (" + str(self.samples) + ") is longer than the audio length (" + str(samples) + ")")
+
         # Check for samples that go beyond the end of the track        
-        if end >= self.length or start >= self.length: 
-            logging.debug("Requested interval (" + str(end) +"," + str(start) +") goes beyond the end of the track (" + str(self.length) + ")")
-            raise RangeError("Requested interval (" + str(end) +"," + str(start) +") goes beyond the end of the track (" + str(self.length) + ")")
+        if end_ix >= self.samples or start_ix >= self.samples: 
+            logging.debug("Requested interval (" + str(start_ix) +"," + str(end_ix) +") goes beyond the end of the track (" + str(self.samples) + ")")
+            raise RangeError("Requested interval (" + str(start_ix) +"," + str(end_ix) +") goes beyond the end of the track (" + str(self.samples) + ")")
         # Check for samples that go beyond the start of the track
-        if end < 0 or start < 0: 
-            logging.debug("Requested interval (" + str(end) +"," + str(start) +") goes beyond the start of the track")
-            raise RangeError("Requested interval (" + str(end) +"," + str(start) +") goes beyond the start of the track")
+        if end_ix < 0 or start_ix < 0: 
+            logging.debug("Requested interval (" + str(end_ix) +"," + str(start_ix) +") goes beyond the start of the track")
+            raise RangeError("Requested interval (" + str(end_ix) +"," + str(start_ix) +") goes beyond the start of the track")
         # Check for samples that 
         # Get the size of the spectrogram data
-        (h, w) = self.data.shape
+        # (h, w) = self.data.shape
         # Compute the start in terms of the array
         # There should definitely be a better way of doing this.
-        start_ix = int(math.floor((start / self.length) * w))
+        # start_ix = int(math.floor((start / self.length) * w))
         # Compute the end in terms of the length
         # we want it to be consistent across audio file lengths
-        end_ix = start_ix + 1720 # int(math.floor((sample_length / self.length) * w))
-        logging.debug("Extracting data in spectrogram interval (" + str(start_ix) + "," + str(end_ix) +") from " + str(w))
+        # end_ix = start_ix + 1720 # int(math.floor((sample_length / self.length) * w))
+        logging.debug("Extracting data in spectrogram interval (" + str(start_ix) + "," + str(end_ix) +") from " + str(self.samples))
         ret= self.data[:, start_ix:end_ix]
         logging.debug("Returned data shape: " + str(ret.shape))
         return ret

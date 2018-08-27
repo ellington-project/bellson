@@ -12,6 +12,8 @@ import os
 import math
 from pathlib import Path
 
+from tensorflow.python.lib.io import file_io
+
 class Track:
     bpm = None
     filename = None
@@ -49,7 +51,7 @@ class EllingtonLibrary:
 
     @classmethod
     def from_file(cls, filename, maxsize=None):
-        with open(filename) as f:
+        with file_io.FileIO(filename, "r") as f:
             json_data = json.load(f)
             return EllingtonLibrary(json_data, maxsize)
 

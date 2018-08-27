@@ -10,11 +10,10 @@ from tensorflow.python.lib.io import file_io
 
 
 import numpy as np
-import matplotlib.pyplot as plt
 
-from ellington_library import EllingtonLibrary, Track
-from audio import Audio
-from generator import LibraryIterator, TrackIterator
+from trainer.ellington_library import EllingtonLibrary, Track
+from trainer.audio import Audio
+from trainer.generator import LibraryIterator, TrackIterator
 
 
 class NBatchLogger(keras.callbacks.Callback):
@@ -166,7 +165,7 @@ def model3(input_time_dim, input_freq_dim, l1filters=64, l2filters=64, d1width=1
 
 def main(data_dir="data/smnp/", ellington_lib="data/example.el", job_dir="logs"):
     logging.basicConfig(
-        format='%(asctime)s %(levelname)s %(module)s %(lineno)d : %(message)s', level=logging.INFO)
+        format='%(asctime)s %(levelname)s %(module)s %(lineno)d : %(message)s', level=logging.DEBUG)
 
     # Set up the data input etc.
     train_lib = EllingtonLibrary.from_file(ellington_lib)
@@ -216,7 +215,7 @@ def main(data_dir="data/smnp/", ellington_lib="data/example.el", job_dir="logs")
 
         # Save the model to the Cloud Storage bucket's jobs directory
         print("Saving to : " + job_dir)
-        with file_io.FileIO('model.h5', mode='r') as input_f:
+        with file_io.FileIO('model.h5', mode='rb') as input_f:
             with file_io.FileIO(job_dir + '-model.h5', mode='w+') as output_f:
                 output_f.write(input_f.read())
                 

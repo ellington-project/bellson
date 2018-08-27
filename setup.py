@@ -1,7 +1,7 @@
 '''Cloud ML Engine package configuration.'''
 from setuptools import setup, find_packages
 
-setup(name='bellson',
+setup(name='trainer',
       version='1.0',
       packages=find_packages(),
       include_package_data=True,
@@ -15,6 +15,5 @@ setup(name='bellson',
           'numpy',
           'librosa',
           'objgraph', 
-          'matplotlib',
           'h5py'],
       zip_safe=False)

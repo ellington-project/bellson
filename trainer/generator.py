@@ -6,8 +6,8 @@ import numpy as np
 from numpy.random import uniform
 import gc
 
-from .ellington_library import EllingtonLibrary, Track
-from .spectrogram import Spectrogram, RangeError
+from trainer.ellington_library import EllingtonLibrary, Track
+from trainer.spectrogram import Spectrogram, RangeError
 
 class TrackIterator: 
     track = None
@@ -33,7 +33,7 @@ class TrackIterator:
             s = uniform(self.start, self.end)
             try:
                 logging.debug("Yielding data in range (" + str(s) + "," + str(s+ self.length)+")")
-                data = self.spect.interval(s, self.length)
+                data = self.spect.interval(s)
                 if data.shape == (256, 1720):
                     i = i + 1
                     yield (self.track.bpm, data)
