@@ -52,9 +52,9 @@ class NBatchLogger(keras.callbacks.Callback):
 
 def main(data_dir="data/smnp/", ellington_lib="data/example.el", job_dir="logs"):
     logging.basicConfig(
-        format='%(asctime)s %(levelname)s %(module)s %(lineno)d : %(message)s', level=logging.DEBUG)
+        format='%(asctime)s %(levelname)s %(module)s %(lineno)d : %(message)s', level=print)
 
-    logging.info(device_lib.list_local_devices())        
+    print(device_lib.list_local_devices())        
 
     # Set up the data input etc.
     train_lib = EllingtonLibrary.from_file(ellington_lib)
@@ -108,7 +108,7 @@ def main(data_dir="data/smnp/", ellington_lib="data/example.el", job_dir="logs")
             with file_io.FileIO(job_dir + '-model.h5', mode='w+') as output_f:
                 output_f.write(input_f.read())
                 
-        logging.info("Epoch: %d / %d" % (epoch, epochs))
+        print("Epoch: %d / %d" % (epoch, epochs))
         for (train, target) in training_gen.batch():
             batch = batch + 1
             metrics = model.train_on_batch(x=train, y=target)
@@ -119,13 +119,13 @@ def main(data_dir="data/smnp/", ellington_lib="data/example.el", job_dir="logs")
                     metrics_log += ' - %s: %.4f' % (k, val)
                 else:
                     metrics_log += ' - %s: %.4e' % (k, val)
-            logging.info('step: {}/{} ::{}'.format(batch,
+            print('step: {}/{} ::{}'.format(batch,
                                             training_gen.len(),
                                             metrics_log))
             gc.collect()
 
         for (train, target) in validation_gen.batch():
-            logging.info("Predicting batch")
+            print("Predicting batch")
             results = model.predict_on_batch(train).flatten().tolist()
 
             d = {}
@@ -135,7 +135,7 @@ def main(data_dir="data/smnp/", ellington_lib="data/example.el", job_dir="logs")
             for k, v in d.items():
                 mean = np.mean(v)
                 vss = ', '.join('%.2f' % i for i in v[0:10])
-                logging.info("{:0.4f} : {:0.4f} :: [{}] ".format(k, mean, vss))
+                print("{:0.4f} : {:0.4f} :: [{}] ".format(k, mean, vss))
 
             target_mean = np.mean(target) * 400
             target_std = np.std(target) * 400
@@ -143,8 +143,8 @@ def main(data_dir="data/smnp/", ellington_lib="data/example.el", job_dir="logs")
             result_mean = np.mean(results) * 400
             result_std = np.std(results) * 400
 
-            logging.info("Target: %0.4f, %0.4f" % (target_mean, target_std))
-            logging.info("Result: %0.4f, %0.4f" % (result_mean, result_std))
+            print("Target: %0.4f, %0.4f" % (target_mean, target_std))
+            print("Result: %0.4f, %0.4f" % (result_mean, result_std))
 
             gc.collect()
 

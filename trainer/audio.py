@@ -38,7 +38,7 @@ class Audio:
     def intervals(self, testing=False):
         # Check for tracks shorter than the training sample length
         if self.length < SAMPLE_LENGTH:
-            logging.error("Audio track too short to extract intervals")
+            print("Audio track too short to extract intervals")
         # Define the start and end of the range of samples
         start = int(math.floor(min(SAMPLE_START, self.length-SAMPLE_LENGTH)))
         stop = int(math.floor(self.length)) - SAMPLE_LENGTH
@@ -51,7 +51,7 @@ class Audio:
         # Get the audio and sample rate
         # This test is garbage.
         if (not self.loaded): 
-            logging.debug("Loading audio data")
+            print("Loading audio data")
             (y, sr) = librosa.load(self.track.filename, sr=SAMPLE_RATE, res_type='kaiser_fast')
             self.audio = y
             self.sr = sr
@@ -61,18 +61,18 @@ class Audio:
             M = librosa.core.magphase(S)[0]
             self.spect = librosa.amplitude_to_db(M, ref=np.max)
 
-            logging.debug("Audio of shape: " + str(self.audio.shape))
-            logging.debug("Audio of time: " + str(self.audio.shape[0] / SAMPLE_RATE))
-            logging.debug("Spectrogram of shape: " + str(self.spect.shape))
+            print("Audio of shape: " + str(self.audio.shape))
+            print("Audio of time: " + str(self.audio.shape[0] / SAMPLE_RATE))
+            print("Spectrogram of shape: " + str(self.spect.shape))
 
             self.loaded = True
         else: 
-            logging.debug("Audio data already loaded!")
+            print("Audio data already loaded!")
         
 
     # def plot_spectrogram(self): 
     #     import matplotlib.pyplot as plt
-    #     logging.info("Saving spectrograms")
+    #     print("Saving spectrograms")
 
     #     # Create a figure, and configure it
     #     compspect = self.spect[64:320,:]
@@ -92,34 +92,34 @@ class Audio:
     #     plt.close(fig)
 
     def save_spectrogram(self, path="data/np"):
-        logging.info("Saving spectrogram as numpy array") 
+        print("Saving spectrogram as numpy array") 
         # Perform some compression - cut off the high frequencies, and some low ones. 
         compspect = self.spect[64:320,:]
-        logging.info("Saving data of size: " + str(compspect.shape))
+        print("Saving data of size: " + str(compspect.shape))
         np.savez_compressed(path + "/" + self.track.digest + ".npz", spect=compspect)
-        logging.info("Saved to file") 
+        print("Saved to file") 
     
     def load_spectrogram(self, path="data/np"):
-        logging.info("Loading back from file") 
+        print("Loading back from file") 
         self.spect = np.load(path + "/" + self.track.digest + ".npz")
-        logging.info("Loaded back")
+        print("Loaded back")
 
         
     def audio_intervals(self, testing=False):
         self.load()
-        logging.debug("Data loaded") 
+        print("Data loaded") 
         for (s, e) in self.intervals(testing): 
             sf = s * self.sr
             ef = e * self.sr
             yield (s, e, self.audio[sf:ef])
 
-        logging.debug("Yielded all audio data available") 
+        print("Yielded all audio data available") 
 
     def spect_interval(self, start=60, end=70): 
         self.load_spectrogram()
         # Check for tracks shorter than the training sample length
         if self.length < SAMPLE_LENGTH:
-            logging.error("Audio track too short to extract intervals")
+            print("Audio track too short to extract intervals")
         # Define the start and end of the range of samples
         start = int(math.floor(min(SAMPLE_START, self.length-SAMPLE_LENGTH)))
         stop = int(math.floor(self.length)) - SAMPLE_LENGTH
@@ -131,7 +131,7 @@ class Audio:
 
     def spect_intervals(self, testing=False): 
         self.load()
-        logging.debug("Data loaded") 
+        print("Data loaded") 
         (h, w) = self.spect.shape
         for (s, e) in self.intervals(testing): 
 
@@ -141,5 +141,5 @@ class Audio:
             se = ss + int(math.floor((SAMPLE_LENGTH/ self.length) * w))
             yield (s, e, self.spect[:, ss:se])
 
-        logging.debug("Yielded all spectrogram data available") 
+        print("Yielded all spectrogram data available") 
 

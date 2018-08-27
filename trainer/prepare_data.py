@@ -18,7 +18,7 @@ def proc(tp):
 
 def main():
     logging.basicConfig(
-        format='%(asctime)s %(levelname)s %(module)s %(lineno)d : %(message)s', level=logging.DEBUG)
+        format='%(asctime)s %(levelname)s %(module)s %(lineno)d : %(message)s', level=print)
     el = EllingtonLibrary.from_file("data/small.el")
 
     print("Total tracks: " + str(len(el.tracks)))

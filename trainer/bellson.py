@@ -64,10 +64,10 @@ class CustomCallback(keras.callbacks.Callback):
 def main(data_dir="data/smnp/", ellington_lib="data/example.el", job_dir="logs"):
     # Start logging
     logging.basicConfig(
-        format='%(asctime)s %(levelname)s %(module)s %(lineno)d : %(message)s', level=logging.DEBUG)
+        format='%(asctime)s %(levelname)s %(module)s %(lineno)d : %(message)s', level=print)
 
     # List the available tensorflow devices
-    logging.info(device_lib.list_local_devices())        
+    print(device_lib.list_local_devices())        
 
     # Set up the data input etc.
     train_lib = EllingtonLibrary.from_file(ellington_lib)

@@ -39,7 +39,7 @@ class Spectrogram:
         # This test is garbage.
         if (not self.loaded): 
             filename = folder + "/" + self.track.digest + ".npz"
-            logging.debug("Loading spectrogram from file " + filename) 
+            print("Loading spectrogram from file " + filename) 
             if tf_version >= '1.1.0':
                 mode = 'rb'
             else: # for TF version 1.0
@@ -48,32 +48,32 @@ class Spectrogram:
             
             with np.load(BytesIO(f.read())) as npzf:
                 self.data = npzf['spect']
-                logging.debug("Loaded spectrogram data")
+                print("Loaded spectrogram data")
 
             self.samples = self.data.shape[1]
 
         else: 
-            logging.debug("Audio data already loaded.")
+            print("Audio data already loaded.")
 
     def interval(self, start=60, samples=1720): 
         # Compute the length of the interval (in seconds) 
         # sample_length = end-start
         # end = start + sample_length
-        # logging.debug("Extracting audio interval (" + str(start) + "," + str(end) +") from " + str(sample_length) + " as a spectrogram")
+        # print("Extracting audio interval (" + str(start) + "," + str(end) +") from " + str(sample_length) + " as a spectrogram")
         start_ix = int(start * 86) # hardcode this for now
         end_ix = start_ix + samples
         # Check for tracks shorter than the training sample length
         if self.samples < samples:
-            logging.debug("Requested sample length (" + str(self.samples) + ") is longer than the audio length (" + str(samples) + ")")
+            print("Requested sample length (" + str(self.samples) + ") is longer than the audio length (" + str(samples) + ")")
             raise RangeError("Requested sample length (" + str(self.samples) + ") is longer than the audio length (" + str(samples) + ")")
 
         # Check for samples that go beyond the end of the track        
         if end_ix >= self.samples or start_ix >= self.samples: 
-            logging.debug("Requested interval (" + str(start_ix) +"," + str(end_ix) +") goes beyond the end of the track (" + str(self.samples) + ")")
+            print("Requested interval (" + str(start_ix) +"," + str(end_ix) +") goes beyond the end of the track (" + str(self.samples) + ")")
             raise RangeError("Requested interval (" + str(start_ix) +"," + str(end_ix) +") goes beyond the end of the track (" + str(self.samples) + ")")
         # Check for samples that go beyond the start of the track
         if end_ix < 0 or start_ix < 0: 
-            logging.debug("Requested interval (" + str(end_ix) +"," + str(start_ix) +") goes beyond the start of the track")
+            print("Requested interval (" + str(end_ix) +"," + str(start_ix) +") goes beyond the start of the track")
             raise RangeError("Requested interval (" + str(end_ix) +"," + str(start_ix) +") goes beyond the start of the track")
         # Check for samples that 
         # Get the size of the spectrogram data
@@ -84,15 +84,15 @@ class Spectrogram:
         # Compute the end in terms of the length
         # we want it to be consistent across audio file lengths
         # end_ix = start_ix + 1720 # int(math.floor((sample_length / self.length) * w))
-        logging.debug("Extracting data in spectrogram interval (" + str(start_ix) + "," + str(end_ix) +") from " + str(self.samples))
+        print("Extracting data in spectrogram interval (" + str(start_ix) + "," + str(end_ix) +") from " + str(self.samples))
         ret= self.data[:, start_ix:end_ix]
-        logging.debug("Returned data shape: " + str(ret.shape))
+        print("Returned data shape: " + str(ret.shape))
         return ret
 
     
     def plot_spectrogram(self): 
         import matplotlib.pyplot as plt
-        logging.debug("Saving spectrograms")
+        print("Saving spectrograms")
 
         # Create a figure, and configure it
         (h, w) = self.data.shape

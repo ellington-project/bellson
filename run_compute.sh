@@ -10,15 +10,17 @@ export REGION=europe-west1
 if [ "$1" == "--local" ]; then
 
     gcloud ml-engine local train \
-    --job-dir $JOB_DIR \
-    --module-name trainer.bellson \
-    --package-path ./trainer \
-    --configuration config.yaml \
-    -- \
-    --data-dir $DATA_DIR \
-    --ellington-lib $LIBRARY \
-    --job-dir $JOB_DIR \
+        --job-dir $JOB_DIR \
+        --module-name trainer.bellson \
+        --package-path ./trainer \
+        --configuration config.yaml \
+        -- \
+        --data-dir $DATA_DIR \
+        --ellington-lib $LIBRARY \
+        --job-dir $JOB_DIR \
+
 else 
+
     gcloud ml-engine jobs submit training $JOB_NAME \
         --module-name trainer.bellson \
         --job-dir $JOB_DIR \
@@ -32,4 +34,5 @@ else
         --job-dir $JOB_DIR \
 
     gcloud ml-engine jobs stream-logs $JOB_NAME
+    
 fi
