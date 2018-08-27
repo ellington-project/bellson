@@ -95,7 +95,7 @@ def main(data_dir="data/smnp/", ellington_lib="data/example.el", job_dir="logs")
                   metrics=['mae', 'msle', 'mape'])
 
     # Set up callbacks - one for tensorboard
-    tfcallback = keras.callbacks.TensorBoard(log_dir=job_dir + "/tensorboard/,
+    tfcallback = keras.callbacks.TensorBoard(log_dir=job_dir + "/tensorboard/",
                                            histogram_freq=0,
                                            write_grads=True,
                                            write_graph=False,
