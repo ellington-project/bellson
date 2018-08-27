@@ -7,26 +7,29 @@ export DATA_DIR=gs://$BUCKET_NAME/data/sparrays
 export LIBRARY=gs://$BUCKET_NAME/data/example.el
 export REGION=europe-west1
 
-gcloud ml-engine local train \
-  --job-dir $JOB_DIR \
-  --module-name trainer.bellson \
-  --package-path ./trainer \
-  --configuration config.yaml \
-  -- \
-  --data-dir $DATA_DIR \
-  --ellington-lib $LIBRARY \
-  --job-dir $JOB_DIR \
+if [ "$1" == "--local" ]; then
 
-# gcloud ml-engine jobs submit training $JOB_NAME \
-#     --module-name trainer.bellson \
-#     --job-dir $JOB_DIR \
-#     --runtime-version 1.9 \
-#     --config config.yaml \
-#     --package-path ./trainer \
-#     --region $REGION \
-#     -- \
-#     --data-dir $DATA_DIR \
-#     --ellington-lib $LIBRARY \
-#     --job-dir $JOB_DIR \
+    gcloud ml-engine local train \
+    --job-dir $JOB_DIR \
+    --module-name trainer.bellson \
+    --package-path ./trainer \
+    --configuration config.yaml \
+    -- \
+    --data-dir $DATA_DIR \
+    --ellington-lib $LIBRARY \
+    --job-dir $JOB_DIR \
+else 
+    gcloud ml-engine jobs submit training $JOB_NAME \
+        --module-name trainer.bellson \
+        --job-dir $JOB_DIR \
+        --runtime-version 1.9 \
+        --config config.yaml \
+        --package-path ./trainer \
+        --region $REGION \
+        -- \
+        --data-dir $DATA_DIR \
+        --ellington-lib $LIBRARY \
+        --job-dir $JOB_DIR \
 
-# gcloud ml-engine jobs stream-logs $JOB_NAME
+    gcloud ml-engine jobs stream-logs $JOB_NAME
+fi

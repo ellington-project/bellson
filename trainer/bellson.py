@@ -17,40 +17,47 @@ from trainer.audio import Audio
 from trainer.generator import LibraryIterator, TrackIterator
 from trainer.model import model_gen
 
-
 class CustomCallback(keras.callbacks.Callback):
-    def __init__(self):
+    def __init__(self, jobd):
+        self.step = 0
+        self.jobd = jobd
         self.metric_cache = {}
 
     def on_batch_end(self, batch, logs={}):
+        self.step = self.step + 1
         for k in self.params['metrics']:
             if k in logs:
                 self.metric_cache[k] = self.metric_cache.get(k, 0) + logs[k]
 
         metrics_log = ''
         for (k, v) in self.metric_cache.items():
-            val = v / self.display
-            if abs(val) > 1e-3:
-                metrics_log += ' - %s: %.4f' % (k, val)
+            if abs(v) > 1e-3:
+                metrics_log += ' - %s: %.4f' % (k, v)
             else:
-                metrics_log += ' - %s: %.4e' % (k, val)
+                metrics_log += ' - %s: %.4e' % (k, v)
+
         print('step: {}/{} ::{}'.format(self.step,
                                         self.params['steps'],
                                         metrics_log))
         self.metric_cache.clear()
 
+        gc.collect()
+            
+            
+
+    def on_epoch_end(self, epoch, logs={}): 
+        print("Saving model")
+
         # Save the model locally
         self.model.save('model.h5')
 
         # Save the model to the Cloud Storage bucket's jobs directory
-        print("Saving to : " + job_dir)
+        print("Saving to : " + self.jobd)
         with file_io.FileIO('model.h5', mode='rb') as input_f:
-            with file_io.FileIO(job_dir + '-model.h5', mode='w+') as output_f:
+            with file_io.FileIO(self.jobd + '-model.h5', mode='w+') as output_f:
                 output_f.write(input_f.read())
 
-        gc.collect()
-            # objgraph.show_most_common_types(limit=20)
-            # objgraph.get_new_ids()
+
 
 
 
@@ -68,7 +75,7 @@ def main(data_dir="data/smnp/", ellington_lib="data/example.el", job_dir="logs")
 
     # Set up the generators to yield training data
     training_gen = LibraryIterator(
-        train_lib, data_dir, samples=32, batchsize=32, start=30, end=150, iterations=1)
+        train_lib, data_dir, samples=128, batchsize=512, start=30, end=150, iterations=1)
     validation_gen = LibraryIterator(
         valid_lib, data_dir, samples=4, batchsize=64, start=30, end=200, iterations=1)
 
@@ -88,25 +95,28 @@ def main(data_dir="data/smnp/", ellington_lib="data/example.el", job_dir="logs")
                   metrics=['mae', 'msle', 'mape'])
 
     # Set up callbacks - one for tensorboard
-    tfcallback = keras.callbacks.TensorBoard(log_dir=job_dir,
+    tfcallback = keras.callbacks.TensorBoard(log_dir=job_dir + "/tensorboard/,
                                            histogram_freq=0,
                                            write_grads=True,
                                            write_graph=False,
                                            write_images=False,
                                            batch_size=32)
     # And another for our custom callback that saves the model.
-    bcallback = CustomCallback()
+    bcallback = CustomCallback(job_dir)
+
+    # One for a progress bar
+    prog_bar = keras.callbacks.ProgbarLogger(count_mode='steps')
 
     # Fit the model using all of the above!
     model.fit_generator(
-        generator = training_gen.iter(), 
+        generator = training_gen.batch(), 
         steps_per_epoch = training_gen.len(), 
         epochs = 1000, 
         verbose = 2, 
-        callbacks = [tfcallback, bcallback], 
-        validation_data = validation_gen.iter(), 
+        callbacks = [tfcallback, bcallback, prog_bar], 
+        validation_data = validation_gen.batch(), 
         validation_steps = validation_gen.len(),
-        use_multiprocessing==True 
+        use_multiprocessing=True 
     )
 
 
