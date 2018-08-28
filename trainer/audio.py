@@ -1,5 +1,5 @@
 import librosa
-# import librosa.display
+import librosa.display
 import numpy as np
 import math
 import logging
@@ -18,6 +18,17 @@ def is_test(s):
     else: 
         return False
 
+class BareTrack:
+    filename = None
+    
+    def __init__(self, filename): 
+        self.filename = filename
+
+    def __str__(self):
+        return "T["+ str(self.filename) + "]"
+
+    def __repr__(self):
+        return "T["+ str(self.filename) + "]"
 
 class Audio:
     # Meta, and file information
@@ -70,26 +81,26 @@ class Audio:
             print("Audio data already loaded!")
         
 
-    # def plot_spectrogram(self): 
-    #     import matplotlib.pyplot as plt
-    #     print("Saving spectrograms")
+    def plot_spectrogram(self): 
+        import matplotlib.pyplot as plt
+        print("Saving spectrograms")
 
-    #     # Create a figure, and configure it
-    #     compspect = self.spect[64:320,:]
-    #     (h, w) = compspect.shape
-    #     fig = plt.figure(figsize=(w/100, h/100))
-    #     ax = plt.subplot(111)
-    #     ax.set_frame_on(False)
-    #     plt.axis('off')
-    #     ax.axes.get_xaxis().set_visible(False)
-    #     ax.axes.get_yaxis().set_visible(False)
+        # Create a figure, and configure it
+        compspect = self.spect
+        (h, w) = compspect.shape
+        fig = plt.figure(figsize=(w/100, h/100))
+        ax = plt.subplot(111)
+        ax.set_frame_on(False)
+        plt.axis('off')
+        ax.axes.get_xaxis().set_visible(False)
+        ax.axes.get_yaxis().set_visible(False)
 
-    #     # Perform some magnitue-to-frequency calculations, and write the result to the figure
-    #     librosa.display.specshow(compspect, y_axis='linear')
+        # Perform some magnitue-to-frequency calculations, and write the result to the figure
+        librosa.display.specshow(compspect, y_axis='linear')
 
-    #     # Save the figure, and close it
-    #     fig.savefig("data/spect/" + self.track.trackname + ".png", dpi=100, bbox_inches='tight', pad_inches=0.0)
-    #     plt.close(fig)
+        # Save the figure, and close it
+        fig.savefig("data/spect/" +  "example.png", dpi=100, bbox_inches='tight', pad_inches=0.0)
+        plt.close(fig)
 
     def save_spectrogram(self, path="data/np"):
         print("Saving spectrogram as numpy array") 

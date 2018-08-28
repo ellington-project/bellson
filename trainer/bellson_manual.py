@@ -52,7 +52,7 @@ class NBatchLogger(keras.callbacks.Callback):
 
 def main(data_dir="data/smnp/", ellington_lib="data/example.el", job_dir="logs"):
     logging.basicConfig(
-        format='%(asctime)s %(levelname)s %(module)s %(lineno)d : %(message)s', level=print)
+        format='%(asctime)s %(levelname)s %(module)s %(lineno)d : %(message)s', level=logging.DEBUG)
 
     print(device_lib.list_local_devices())        
 

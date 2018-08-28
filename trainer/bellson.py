@@ -41,9 +41,7 @@ class CustomCallback(keras.callbacks.Callback):
                                         metrics_log))
         self.metric_cache.clear()
 
-        gc.collect()
-            
-            
+        gc.collect()          
 
     def on_epoch_end(self, epoch, logs={}): 
         print("Saving model")
@@ -58,13 +56,10 @@ class CustomCallback(keras.callbacks.Callback):
                 output_f.write(input_f.read())
 
 
-
-
-
 def main(data_dir="data/smnp/", ellington_lib="data/example.el", job_dir="logs"):
     # Start logging
     logging.basicConfig(
-        format='%(asctime)s %(levelname)s %(module)s %(lineno)d : %(message)s', level=print)
+        format='%(asctime)s %(levelname)s %(module)s %(lineno)d : %(message)s', level=logging.DEBUG)
 
     # List the available tensorflow devices
     print(device_lib.list_local_devices())        
