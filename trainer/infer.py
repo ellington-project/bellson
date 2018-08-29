@@ -27,7 +27,6 @@ def get_sample(spect, start, length):
 
 
 
-
 def main(model, audio):
     logging.basicConfig(
         format='%(asctime)s %(levelname)s %(module)s %(lineno)d : %(message)s', level=logging.DEBUG)
@@ -41,7 +40,7 @@ def main(model, audio):
     # And create an Audio object from it
     audio = Audio(track)
     audio.load() # Load the data, and compute a spectrogram. 
-    audio.plot_spectrogram()
+    # audio.plot_spectrogram()
 
     # Get the spectrogram data, and cut off frequencies
     spect = audio.spect[64:320,:]
@@ -74,6 +73,8 @@ def main(model, audio):
     print("Results: [{}]".format( "\n ".join('(%.2f, %.2f)' % (t, (400 * r)) for (t, r) in pairs) ))
     print("Mean: %.2f" % (np.mean(results) * 400))
     print("Stddev: %.2f" % (np.std(results) * 400))
+
+    print("Geomean: %.2f" % ((np.array(results).prod()**(1.0/len(results))) * 400))
 
 
 if __name__ == '__main__':
