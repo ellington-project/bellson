@@ -6,5 +6,6 @@
 *__pycache__
 .vscode
 data
+data/*
 *.pyc
 **.pyc

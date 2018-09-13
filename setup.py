@@ -1,14 +1,13 @@
-'''Cloud ML Engine package configuration.'''
 from setuptools import setup, find_packages
 
-setup(name='trainer',
-      version='1.0',
+setup(name='bellson',
+      version='0.0.1',
+      author="Adam Harries", 
+      author_email="harries.adam@gmail.com",
+      description="ML based tempo detection for swing music",
+      url = "https://www.github.com/AdamHarries/bellson",
       packages=find_packages(),
       include_package_data=True,
-      description='Bellson BPM keras model on Cloud ML Engine',
-      author='Adam Harries',
-      author_email='harries.adam@gmail.com',
-      license='GPL-3.0',
       install_requires=[
           'keras',
           'tensorflow-gpu',

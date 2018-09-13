@@ -80,7 +80,6 @@ class Audio:
         else: 
             print("Audio data already loaded!")
         
-
     def plot_spectrogram(self): 
         import matplotlib.pyplot as plt
         print("Saving spectrograms")
@@ -114,7 +113,6 @@ class Audio:
         print("Loading back from file") 
         self.spect = np.load(path + "/" + self.track.digest + ".npz")
         print("Loaded back")
-
         
     def audio_intervals(self, testing=False):
         self.load()
@@ -138,7 +136,6 @@ class Audio:
             # TODO: Handle non-1 SAMPLE_INTERVALs? Do we need to?
             if is_test(s) == testing:
                 yield (s, s + SAMPLE_LENGTH)
-
 
     def spect_intervals(self, testing=False): 
         self.load()
