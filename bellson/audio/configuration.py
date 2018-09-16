@@ -16,6 +16,10 @@ class Configuration:
         self.samplerate = samplerate
         self.nfft = nfft 
 
+    @classmethod
+    def default(cls): 
+        return Configuration()
+
     def seconds_to_frames(self, time): 
         return librosa.core.time_to_frames(time, self.samplerate, self.nfft/4, self.nfft)
 
@@ -25,7 +29,7 @@ class Configuration:
     def sample_shape(self): 
         h = int(self.highf-self.lowf)
         w = int(self.sample_frames())
-        return (w,h)
+        return (h,w)
 
 def main(time): 
     # Config
