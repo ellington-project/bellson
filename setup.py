@@ -15,5 +15,6 @@ setup(name='bellson',
           'numpy',
           'librosa',
           'objgraph', 
+          'matplotlib',
           'h5py'],
       zip_safe=False)
