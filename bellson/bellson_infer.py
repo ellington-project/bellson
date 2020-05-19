@@ -11,7 +11,7 @@ from tensorflow import keras
 import numpy as np
 
 # from bellson.audio import Track, CacheLevel, TrackIterator, RangeError
-from trainer.library_iterator import SpectIterator
+from trainer.library_iterator import TrackIterator
 
 
 def main(modelfile, audiofile):
@@ -35,10 +35,10 @@ def main(modelfile, audiofile):
 
     # create a track from the audiofile file path, and load spectrogram data
     # Don't cache, as this just takes up file space
-    spectrogram_iterator = SpectIterator(audiofile, samples=100)
+    track_iterator = TrackIterator.from_filename(audiofile)
     logging.info(f"Loaded track from path {audiofile}")
 
-    (starttimes, samples) = spectrogram_iterator.get_batch()
+    (starttimes, samples) = track_iterator.get_batch_with_start_times(sample_count=100)
 
     logging.info("Predicting batch")
     results = model.predict_on_batch(samples).flatten().tolist()

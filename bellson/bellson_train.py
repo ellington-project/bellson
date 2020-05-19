@@ -34,7 +34,7 @@ class CustomCallback(keras.callbacks.Callback):
         logging.debug("Saving model")
 
         # Save the model locally
-        self.model.save(self.jobd+'model.h5')
+        self.model.save(self.jobd+'/latest-model.h5')
 
         gc.collect()
 
@@ -47,8 +47,8 @@ def main(cache_dir="/tmp", ellington_lib="data/example.el", job_dir="job"):
     (train_lib, valid_lib) = overall_library.split_training_validation()
 
     # Set up the generators to yield training data
-    training_gen = LibraryIterator(train_lib, batch_size=16)
-    validation_gen = LibraryIterator(valid_lib, batch_size=32)
+    training_gen = LibraryIterator(train_lib, multiplier=1)
+    validation_gen = LibraryIterator(valid_lib, multiplier=3)
 
     logging.info(f"Training length: {train_lib.len()}")
     logging.info(f"Validation length: {valid_lib.len()}")
@@ -60,12 +60,13 @@ def main(cache_dir="/tmp", ellington_lib="data/example.el", job_dir="job"):
     input_freq_dim = 256
 
     # Create the model, print info
-    model = tmodel.model_gen_v2(input_time_dim, input_freq_dim)
+    model = tmodel.model_gen(input_time_dim, input_freq_dim)
     print(model.summary())
 
     # Compile the model
     opt = keras.optimizers.SGD(
         lr=1e-4, decay=1e-6, momentum=0.9, nesterov=True)
+    # opt = keras.optimizers.Adam(learning_rate=1e-2)
 
     # opt = keras.optimizers.Adam(learning_rate=0.01)
     model.compile(optimizer=opt,
@@ -108,11 +109,11 @@ def main(cache_dir="/tmp", ellington_lib="data/example.el", job_dir="job"):
         # Our dataset for validating the training of the mode.
         validation_data=validation_dataset,
         # Use a larger queue so that we can get more data in parallel
-        # max_queue_size=16,
+        # max_queue_size=8,
         # Use a number of workers so that we load data in parallel.
-        # workers=4,
+        # workers=2,
         # and use multiprocessing so that we actually use them.
-        # use_multiprocessing=False
+        # use_multiprocessing=True
     )
 
 

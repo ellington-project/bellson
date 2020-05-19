@@ -1,7 +1,6 @@
 import logging
 import copy
 import random
-# from numpy import array
 import numpy as np
 from numpy.random import uniform
 import gc
@@ -15,90 +14,114 @@ SAMPLE_W = 256
 SAMPLE_H = 1720
 
 
-class SpectIterator:
-    spect = None
-
-    def __init__(self, filename, start_cutoff=30, end_cutoff=30, samples=10):
-        # Load the spectrogram
-        self.spect = AudioSpectrogram.from_file_name(filename)
-        # Set the start/end ixs of our allowed sample collection
-        track_len = self.spect.audio_length()
-        self.start_ix = int(time_to_stft_frame(start_cutoff))
-        self.end_ix = int(time_to_stft_frame(track_len-end_cutoff) - SAMPLE_H)
-        logging.debug(
-            f"Clamping samples within range ({self.start_ix}, {self.end_ix})")
-        # Set the config values
-        self.samples = samples
-
-    def get_sample(self):
-        while(True):
-            s = int(uniform(self.start_ix, self.end_ix))
-            try:
-                logging.debug(f"Yielding data from position {s}")
-                sample = self.spect.interval(s)
-                if sample.shape == (SAMPLE_W, SAMPLE_H):
-                    (w, h) = sample.shape
-                    sample = np.reshape(sample, (w, h, 1))
-                    return (s, sample)
-            except RangeError:
-                logging.debug(
-                    "Random range was invalid - continuing to try again")
-
-    def get_batch(self):
-        (start_times, samples) = zip(
-            *[self.get_sample() for x in range(0, self.samples)])
-        return (start_times, np.array(samples))
-
-
 class TrackIterator:
-    track = None
+    bpm = None
     spect = None
+    multiplier = 1
 
-    def __init__(self, track, start_cutoff=30, end_cutoff=30, samples=10):
-        # Set the values, and load the spectrogram
-        self.track = track
-        self.spect = AudioSpectrogram.from_library_track(track)
+    def __init__(self, spect, start_cutoff=30, end_cutoff=30, multiplier=1, bpm=None):
+        # Load the spectrogram
+        self.spect = spect
+        # Set the multiplier for yielding tracks
+        self.multiplier = multiplier
         # Set the start/end ixs of our allowed sample collection
         track_len = self.spect.audio_length()
         self.start_ix = int(time_to_stft_frame(start_cutoff))
-        self.end_ix = int(time_to_stft_frame(track_len-end_cutoff) - SAMPLE_H)
+        self.end_ix = int(time_to_stft_frame(
+            track_len-end_cutoff) - SAMPLE_H)
         logging.debug(
-            f"Clamping samples within range ({self.start_ix}, {self.end_ix})")
-        # Set the config values
-        self.samples = samples
+            f"Clamping samples within times/range ({start_cutoff}, {track_len - end_cutoff}) / ({self.start_ix}, {self.end_ix})")
 
-    def get_sample(self):
+        if (track_len-end_cutoff) - start_cutoff < 30:
+            logging.warn(
+                f"Track start/end times ({start_cutoff}, {track_len - end_cutoff}) gives less than 30s of data!")
+            # If we don't have that much data, we should just use all of it - it's unlikely that there will be slow downs/speedups in a short track.
+            self.start_ix = 0
+            self.end_ix = int(time_to_stft_frame(
+                self.spect.audio_length())) - SAMPLE_H
+        # Set the config values
+        self.bpm = bpm
+
+    @classmethod
+    def from_filename(cls, filename, start_cutoff=30, end_cutoff=30, multiplier=1):
+        return TrackIterator(spect=AudioSpectrogram.from_file_name(filename), start_cutoff=start_cutoff, end_cutoff=end_cutoff, multiplier=multiplier, bpm=None)
+
+    @classmethod
+    def from_track(cls, track, start_cutoff=30, end_cutoff=30, multiplier=1):
+        return TrackIterator(spect=AudioSpectrogram.from_library_track(track), start_cutoff=start_cutoff, end_cutoff=end_cutoff,  multiplier=multiplier, bpm=track.bpm)
+
+    def get_random_sample_and_time(self):
         while(True):
             s = int(uniform(self.start_ix, self.end_ix))
             try:
-                logging.debug(f"Yielding data from position {s}")
-                sample = self.spect.interval(s)
-                assert(sample.shape == (SAMPLE_W, SAMPLE_H))
-                (w, h) = sample.shape
-                sample = np.reshape(sample, (w, h, 1))
-                return sample
+                sample = self.get_sample_at_ix(s)
+                return (sample, s)
             except RangeError:
                 logging.debug(
                     "Random range was invalid - continuing to try again")
 
-    def get_batch(self):
-        samples = np.array([self.get_sample() for x in range(0, self.samples)])
-        tempos = np.repeat(float(self.track.bpm)/400.0, self.samples)
+    def get_random_sample(self):
+        (sample, _s) = self.get_random_sample_and_time()
+        return sample
+
+    def get_sample_at_ix(self, ix):
+        logging.debug(f"Yielding data from position {ix}")
+        sample = self.spect.interval(ix)
+        assert sample.shape == (SAMPLE_W, SAMPLE_H)
+        (w, h) = sample.shape
+        return np.reshape(sample, (w, h, 1))
+
+    def get_uniform_batch(self, sample_c=None):
+        # Get a uniform set of samples that covers the spectrogram as well as possible.
+        # Start off by working out how many samples we'll need
+        logging.debug(
+            f"end col: {self.end_ix}, start col: {self.start_ix}")
+        cols = self.end_ix - self.start_ix
+        logging.debug(f"Spectrograph has {cols} columns of data")
+
+        if sample_c is None:
+            frames = int(np.ceil(float(cols)/float(SAMPLE_H)))
+            logging.debug(
+                f"End to end, {frames} frames of data are trivially available")
+            assert frames > 0
+            frames = frames * self.multiplier
+            logging.debug(
+                f"Retrieving {frames} frames of data")
+        else:
+            assert sample_c > 0
+            assert sample_c < cols
+            frames = sample_c
+
+        indicies = np.linspace(self.start_ix, self.end_ix-SAMPLE_H, num=frames)
+        samples = np.array([self.get_sample_at_ix(int(np.floor(x)))
+                            for x in indicies])
+        return samples
+
+        # This assumes that we've been initilised with a bpm
+
+    def get_batch_with_tempos(self):
+        samples = self.get_uniform_batch()
+        tempos = np.repeat(float(self.bpm)/400.0, samples.shape[0])
         logging.debug(
             f"Samples shape: {samples.shape}, tempos shape: {tempos.shape}")
         return (samples, tempos)
+
+    # def get_batch_with_start_times(self, sample_count):
+    #     samples = [self.get_random_sample() for x in range(0, sample_count)]
+    #     print(f"Samples type: {type(samples)}")
+    #     return (start_times, np.concatenate(np.array(samples)))
 
 
 class LibraryIterator(Sequence):
     library = None
 
-    def __init__(self, library, start=60, end=180, batch_size=32):
+    def __init__(self, library, start_cutoff=15, end_cutoff=5, multiplier=1):
         # Make a deep copy of the library, so that we can shuffle it.
         self.library = copy.deepcopy(library)
         # Cache config values
-        self.start = start
-        self.end = end
-        self.batch_size = batch_size
+        self.start_cutoff = start_cutoff
+        self.end_cutoff = end_cutoff
+        self.multiplier = multiplier
 
     def __len__(self):
         """
@@ -111,8 +134,9 @@ class LibraryIterator(Sequence):
         # Get track idx from the library
         track = self.library.tracks[idx]
         logging.debug(f"Batch {idx} / track {track}")
-        ti = TrackIterator(track, self.start, self.end, self.batch_size)
-        batch = ti.get_batch()  # :: (samples, tempos)
+        ti = TrackIterator.from_track(
+            track, self.start_cutoff, self.end_cutoff, multiplier=self.multiplier)
+        batch = ti.get_batch_with_tempos()  # :: (samples, tempos)
         return batch
 
     def batch_count(self):
@@ -125,15 +149,28 @@ class LibraryIterator(Sequence):
         logging.debug("Shuffling library")
         random.shuffle(self.library.tracks)
 
-    def realise_for_validation(self):
+    def realise_for_validation(self, multiplier=1):
         logging.info(
             f"Realising validation dataset of {len(self.library.tracks)} tracks")
         # samples, bpms :: ([np.arr, np.arr, ...], [np.arr, np.arr])
-        samples, bpms = zip(*[TrackIterator(
-            track, self.start, self.end, self.batch_size).get_batch() for track in self.library.tracks])
 
-        arr_samples, arr_bpms = np.array(samples).reshape((self.batch_count()*self.batch_size, SAMPLE_W, SAMPLE_H, 1)), np.array(
-            bpms).reshape(self.batch_count() * self.batch_size)
+        samples = []
+        bpms = []
+        total_samples = 0
+
+        for track in self.library.tracks:
+            logging.info(f"Loading track: {track.trackname}")
+            (batch, tempo) = TrackIterator.from_track(track, self.start_cutoff,
+                                                      self.end_cutoff, multiplier=self.multiplier).get_batch_with_tempos()
+            (s, _, _, _) = batch.shape
+            total_samples += s
+            samples.append(batch)
+            bpms.append(tempo)
+
+        logging.info(f"Loaded {total_samples} total samples.")
+
+        arr_samples = np.concatenate(samples)
+        arr_bpms = np.concatenate(bpms)
 
         del samples
         del bpms
@@ -142,52 +179,3 @@ class LibraryIterator(Sequence):
         logging.debug(f"Bpm(s) shape: {arr_bpms.shape}")
 
         return (arr_samples, arr_bpms)
-
-    # def iter(self):
-    #     # Go across <self.iterations> iterations
-    #     for i in range(0, self.iterations):
-    #         # Start by shuffling the library
-    #         self.shuffle()
-    #         # Iterate over the tracks, and get 20 random samples.
-    #         for t in self.library.tracks:
-    #             print("Yielding spectrogram data for " + t.trackname)
-    #             ti = TrackIterator(t, self.start,
-    #                                self.end, self.length, self.samples)
-    #             # Generate <samples> random samples from the track, and yield them
-    #             for s in ti.iter():
-    #                 yield s
-    #             del ti
-
-    # def batch(self):
-    #     # Yield an iterator over batches of samples
-    #     # Iterate over the iterator:
-    #     ix = 0
-    #     inputs = []
-    #     targets = []
-    #     for s in self.iter():
-    #         target = float(s[0]) / 400.0
-    #         targets.append(target)
-
-    #         inp = s[1]
-    #         (w, h) = inp.shape
-    #         maxv = np.max(np.abs(inp))
-    #         data = np.reshape(inp, (w, h, 1)) / maxv
-    #         inputs.append(data)
-
-    #         ix = ix + 1
-
-    #         if(ix == self.batchsize):
-    #             inputs_arr = np.stack(inputs, axis=0)
-    #             targets_arr = np.stack(targets, axis=0)
-
-    #             logging.info("Yielding an array of " +
-    #                          str(inputs_arr.shape) + " samples")
-
-    #             yield inputs_arr, targets_arr
-
-    #             del inputs
-    #             del targets
-    #             gc.collect()
-    #             inputs = []
-    #             targets = []
-    #             ix = 0
