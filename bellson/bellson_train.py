@@ -40,35 +40,46 @@ class CustomCallback(keras.callbacks.Callback):
 
 
 def main(cache_dir="/tmp", ellington_lib="data/example.el", job_dir="job"):
+    logging.info("Starting training application...")
     config.cache_directory = cache_dir
 
     # Set up the data input etc.
+    logging.info(f"Loading overall ellington library from {ellington_lib}")
     overall_library = EllingtonLibrary.from_file(ellington_lib)
     (train_lib, valid_lib) = overall_library.split_training_validation()
+    train_lib_len, valid_lib_len = len(train_lib.tracks), len(valid_lib.tracks)
+
+    logging.info(
+        f"Split overall library into (training, validation) sub-libraries of lengths: ({train_lib_len}, {valid_lib_len})")
+
+    logging.info("Training library: ")
+    for trackix in range(train_lib_len):
+        track = train_lib.tracks[trackix]
+        logging.info(f"- {trackix}/{train_lib_len}  --  {track.trackname}")
+
+    logging.info("Validation library: ")
+    for trackix in range(valid_lib_len):
+        track = valid_lib.tracks[trackix]
+        logging.info(f"- {trackix}/{valid_lib_len}  --  {track.trackname}")
 
     # Set up the generators to yield training data
-    training_gen = LibraryIterator(train_lib, multiplier=1)
-    validation_gen = LibraryIterator(valid_lib, multiplier=2)
-
-    logging.info(f"Training length: {train_lib.len()}")
-    logging.info(f"Validation length: {valid_lib.len()}")
-
-    validation_dataset = validation_gen.realise_for_validation()
+    training_gen = LibraryIterator(train_lib, multiplier=5)
+    validation_gen = LibraryIterator(valid_lib, multiplier=5)
 
     # Fix an input size for our model
     input_time_dim = 1720
     input_freq_dim = 256
 
     # Create the model, print info
+    logging.info("Generating model")
     model = tmodel.model_gen(input_time_dim, input_freq_dim)
     print(model.summary())
 
     # Compile the model
     opt = keras.optimizers.SGD(
         lr=1e-4, decay=1e-6, momentum=0.9, nesterov=True)
-    # opt = keras.optimizers.Adam(learning_rate=1e-2)
 
-    # opt = keras.optimizers.Adam(learning_rate=0.01)
+    logging.info("Compiling model")
     model.compile(optimizer=opt,
                   loss='mse',
                   metrics=['mae', 'msle', 'mape'])
@@ -94,6 +105,7 @@ def main(cache_dir="/tmp", ellington_lib="data/example.el", job_dir="job"):
     bcallback = CustomCallback(job_dir)
 
     # Fit the model using all of the above!
+    logging.info("Starting training!")
     model.fit(
         # provide input to x as a generator - don't need to specify y
         x=training_gen,
@@ -107,13 +119,7 @@ def main(cache_dir="/tmp", ellington_lib="data/example.el", job_dir="job"):
         callbacks=[tfcallback, csvlogger,
                    model_checkpoint_callback, bcallback],
         # Our dataset for validating the training of the mode.
-        validation_data=validation_dataset,
-        # Use a larger queue so that we can get more data in parallel
-        # max_queue_size=8,
-        # Use a number of workers so that we load data in parallel.
-        # workers=2,
-        # and use multiprocessing so that we actually use them.
-        # use_multiprocessing=True
+        validation_data=validation_gen,
     )
 
 

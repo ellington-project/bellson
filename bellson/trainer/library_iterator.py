@@ -115,7 +115,7 @@ class TrackIterator:
 class LibraryIterator(Sequence):
     library = None
 
-    def __init__(self, library, start_cutoff=0, end_cutoff=0, multiplier=1):
+    def __init__(self, library, start_cutoff=30, end_cutoff=30, multiplier=1):
         # Make a deep copy of the library, so that we can shuffle it.
         self.library = copy.deepcopy(library)
         # Cache config values
@@ -133,7 +133,8 @@ class LibraryIterator(Sequence):
         assert(idx < len(self.library.tracks))
         # Get track idx from the library
         track = self.library.tracks[idx]
-        logging.debug(f"Batch {idx} / track {track}")
+        logging.debug(
+            f"Training: idx {idx} / track {track.trackname}")
         ti = TrackIterator.from_track(
             track, self.start_cutoff, self.end_cutoff, multiplier=self.multiplier)
         batch = ti.get_batch_with_tempos()  # :: (samples, tempos)
