@@ -115,7 +115,7 @@ class TrackIterator:
 class LibraryIterator(Sequence):
     library = None
 
-    def __init__(self, library, start_cutoff=15, end_cutoff=5, multiplier=1):
+    def __init__(self, library, start_cutoff=0, end_cutoff=0, multiplier=1):
         # Make a deep copy of the library, so that we can shuffle it.
         self.library = copy.deepcopy(library)
         # Cache config values

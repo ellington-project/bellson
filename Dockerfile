@@ -5,10 +5,13 @@ run apt-get -y install libsndfile1 ffmpeg
 run pip3 install \ 
     objgraph \
     librosa \
-    matplotlib
+    matplotlib \
+    seaborn \
+    pandas 
 
 workdir bellson 
 
-add do_training.sh do_training.sh
+# add scripts scripts 
+# add do_training.sh do_training.sh
 
-ENTRYPOINT ./do_training.sh
+# ENTRYPOINT ["./do_training.sh"]

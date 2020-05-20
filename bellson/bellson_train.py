@@ -48,7 +48,7 @@ def main(cache_dir="/tmp", ellington_lib="data/example.el", job_dir="job"):
 
     # Set up the generators to yield training data
     training_gen = LibraryIterator(train_lib, multiplier=1)
-    validation_gen = LibraryIterator(valid_lib, multiplier=3)
+    validation_gen = LibraryIterator(valid_lib, multiplier=2)
 
     logging.info(f"Training length: {train_lib.len()}")
     logging.info(f"Validation length: {valid_lib.len()}")

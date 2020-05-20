@@ -43,7 +43,7 @@ class Track:
             bpm = int(json['metadata']['bpm'])
             if bpm is None:
                 return None
-            if bpm < 50:
+            if bpm < 100:
                 logging.debug("Track is too slow to use for training.")
                 return None
         except:
