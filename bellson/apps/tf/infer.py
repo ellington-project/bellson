@@ -32,7 +32,11 @@ def main(modelfile, audiofile):
     samples = track_iterator.get_uniform_batch(sample_c=100)
 
     logging.info("Predicting batch")
-    results = model.predict_on_batch(samples).flatten().tolist()
+    results = model.predict_on_batch(samples)
+    if isinstance(results, tf.python.framework.ops.EagerTensor):
+        results = results.numpy().flatten().tolist()
+    else:
+        results = results.flatten().tolist()
 
     logging.debug("Results: [{}]".format("\n ".join(
         ['%.2f' % (r * 400) for r in results])))

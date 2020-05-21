@@ -30,10 +30,8 @@ def plot_inference_accuracy(tracks, filename, model):
     trackc = len(tracks)
     i = 0
     for track in tracks:
-        track_name = re.sub("\[.*\] ", "", track.trackname)
-        track_name = re.sub(" \(.*\)", "", track_name)
         logging.info(
-            f"Predicting track {i}/{trackc} - {track_name} (bpm: {track.bpm})")
+            f"Predicting track {i}/{trackc} - {track.shortname} (bpm: {track.bpm})")
         i = i + 1
 
         ti = TrackIterator.from_track(track)
@@ -42,14 +40,19 @@ def plot_inference_accuracy(tracks, filename, model):
 
         logging.info("Running network")
         results = model.predict_on_batch(
-            audio_samples).numpy().flatten().tolist()
+            audio_samples)
+
+        if tf.is_tensor(results):
+            results = results.numpy().flatten().tolist()
+        else:
+            results = results.flatten().tolist()
 
         predictions = list(map(lambda s: s * 400, results))
 
         # logging.info("Running naive librosa method")
         # librosa_tempo = track.librosa_tempo()
 
-        results_dict[track_name] = {
+        results_dict[track.shortname] = {
             'bpm': track.bpm,
             # 'librosa': librosa_tempo,
             'predictions': predictions}
@@ -107,7 +110,8 @@ def main(cache_dir="/tmp", ellington_lib="data/example.el",  modelfile="nofile",
     plot_inference_accuracy(valid_lib.tracks, plotd +
                             "/validation_accuracy.png", model)
     # Too big - don't do this!
-    # plot_inference_accuracy(train_lib.tracks, "training_accuracy.png", model)
+    plot_inference_accuracy(train_lib.tracks, plotd +
+                            "training_accuracy.png", model)
 
 
 if __name__ == '__main__':
