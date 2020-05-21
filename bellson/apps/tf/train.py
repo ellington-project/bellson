@@ -66,13 +66,9 @@ def main(cache_dir="/tmp", ellington_lib="data/example.el", job_dir="job"):
     training_gen = LibraryIterator(train_lib, multiplier=5)
     validation_gen = LibraryIterator(valid_lib, multiplier=5)
 
-    # Fix an input size for our model
-    input_time_dim = 1720
-    input_freq_dim = 256
-
     # Create the model, print info
     logging.info("Generating model")
-    model = tmodel.model_gen(input_time_dim, input_freq_dim)
+    model = tmodel.gen_latest_model()
     print(model.summary())
 
     # Compile the model

@@ -10,41 +10,27 @@ import os.path
 from .ellington_library import Track
 from . import config
 
-SAMPLE_LENGTH = 10
-SAMPLE_START = 60
-SAMPLE_INTERVAL = 1
-
-# Adjust these knobs to change which "line"
-SPECTROGRAM_LOW_FREQUENCY_CUTOFF = 64
-SPECTROGRAM_HIGH_FREQUENCY_CUTOFF = 320
-
-# Parameters for librosa.core.stft. Manually specified so that we can keep track of them.
-SAMPLE_RATE = 44100
-N_FFT = 1024
-WIN_LENGTH = N_FFT
-HOP_LENGTH = int(WIN_LENGTH/4)
-
 
 def time_to_stft_frame(time):
     # First calculate time to sample:
-    # sample_ix = time * SAMPLE_RATE
+    # sample_ix = time * config.SAMPLE_RATE
     # Then use that to calculate the column, by dividing by the hop_length
-    # stft_col = sample_ix / HOP_LENGTH
-    # return int((time * SAMPLE_RATE)/HOP_LENGTH)
+    # stft_col = sample_ix / config.HOP_LENGTH
+    # return int((time * config.SAMPLE_RATE)/config.HOP_LENGTH)
 
     # To calculate the starting (frame) index for a time t, call:
-    return librosa.core.time_to_frames(np.array([time]), sr=SAMPLE_RATE, hop_length=HOP_LENGTH)[0]
+    return librosa.core.time_to_frames(np.array([time]), sr=config.SAMPLE_RATE, hop_length=config.HOP_LENGTH)[0]
 
 
 def stft_frame_to_time(col_ix):
     # First, calculate column IX to sample_ix
-    # sample_ix = col_ix * HOP_LENGTH
+    # sample_ix = col_ix * config.HOP_LENGTH
     # Then divide by the sample rate to get time
-    # time = sample_ix / SAMPLE_RATE
-    # return float(col_ix * HOP_LENGTH) / float(SAMPLE_RATE)
+    # time = sample_ix / config.SAMPLE_RATE
+    # return float(col_ix * config.HOP_LENGTH) / float(config.SAMPLE_RATE)
 
     # To calculate the time of a (frame) index i, call:
-    return librosa.core.frames_to_time(np.array([col_ix]), sr=SAMPLE_RATE, hop_length=HOP_LENGTH)[0]
+    return librosa.core.frames_to_time(np.array([col_ix]), sr=config.SAMPLE_RATE, hop_length=config.HOP_LENGTH)[0]
 
 
 class RangeError(Exception):
@@ -95,20 +81,20 @@ class AudioSpectrogram:
         """
         logging.debug("Loading audio data")
         (y, sr) = librosa.load(self.source_filename,
-                               sr=SAMPLE_RATE, res_type='kaiser_fast')
+                               sr=config.SAMPLE_RATE, res_type='kaiser_fast')
 
-        assert sr == SAMPLE_RATE
+        assert sr == config.SAMPLE_RATE
 
         # Compute a spectrogram,
-        S = librosa.stft(y, n_fft=N_FFT, hop_length=HOP_LENGTH,
-                         win_length=WIN_LENGTH)
+        S = librosa.stft(y, n_fft=config.N_FFT, hop_length=config.HOP_LENGTH,
+                         win_length=config.WIN_LENGTH)
         M = librosa.core.magphase(S)[0]
         # store it as self.spect_data, after cutting off unneccessary high/low frequencies
         self.spect_data = librosa.amplitude_to_db(M, ref=np.max)
         logging.debug(
             f"spectrogram shape before low/high cutoff: {self.spect_data.shape}")
         self.spect_data = self.spect_data[
-            SPECTROGRAM_LOW_FREQUENCY_CUTOFF:SPECTROGRAM_HIGH_FREQUENCY_CUTOFF, :]
+            config.SPECTROGRAM_LOW_FREQUENCY_CUTOFF:config.SPECTROGRAM_HIGH_FREQUENCY_CUTOFF, :]
         logging.debug(
             f"spectrogram shape after low/high cutoff: {self.spect_data.shape}")
 
@@ -116,12 +102,12 @@ class AudioSpectrogram:
         self.spect_data = self.spect_data / np.max(np.abs(self.spect_data))
 
         logging.debug("Audio of shape: " + str(y.shape))
-        logging.debug("Audio of time: " + str(y.shape[0] / SAMPLE_RATE))
+        logging.debug("Audio of time: " + str(y.shape[0] / config.SAMPLE_RATE))
         logging.debug("Spectrogram of shape: " + str(self.spect_data.shape))
         logging.debug("Calculated time (from spectrogram): " +
                       str(self.audio_length()))
         logging.debug("Calculated frames (from time): " +
-                      str(time_to_stft_frame(y.shape[0] / SAMPLE_RATE)))
+                      str(time_to_stft_frame(y.shape[0] / config.SAMPLE_RATE)))
 
         # If we should cache, save it.
         if should_cache:
@@ -184,7 +170,7 @@ class AudioSpectrogram:
     def audio_length(self):
         return stft_frame_to_time(self.spect_data.shape[1])
 
-    def interval(self, start=60, samples=1720):
+    def interval(self, start=60, samples=config.input_time_dim):
 
         # Compute the length of the interval (in seconds)
         # sample_length = end-start

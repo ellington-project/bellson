@@ -12,6 +12,7 @@ import numpy as np
 
 # from bellson.audio import Track, CacheLevel, TrackIterator, RangeError
 from ...libbellson.library_iterator import TrackIterator
+from ...libbellson.model import load_model
 
 
 def main(modelfile, audiofile):
@@ -19,17 +20,7 @@ def main(modelfile, audiofile):
     logging.info("Started infererence tool")
     # Create the model, print info
     logging.info("Loading model")
-    model = None
-    try:
-        model = keras.models.load_model(modelfile, compile=False)
-    except Exception as e:
-        logging.error(f"Threw: {str(e)}")
-        logging.info("Manually creating model")
-        from ...libbellson.model import model_gen
-        input_time_dim = 1720
-        input_freq_dim = 256
-        model = model_gen(input_time_dim, input_freq_dim)
-        model.load_weights(modelfile)
+    model = load_model(modelfile)
 
     logging.info("Loaded model")
 

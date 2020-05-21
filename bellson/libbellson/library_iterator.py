@@ -9,9 +9,7 @@ from tensorflow.keras.utils import Sequence
 
 from .ellington_library import EllingtonLibrary, Track
 from .audio_spectrogram import AudioSpectrogram, RangeError, time_to_stft_frame, stft_frame_to_time
-
-SAMPLE_W = 256
-SAMPLE_H = 1720
+from . import config
 
 
 class TrackIterator:
@@ -28,7 +26,7 @@ class TrackIterator:
         track_len = self.spect.audio_length()
         self.start_ix = int(time_to_stft_frame(start_cutoff))
         self.end_ix = int(time_to_stft_frame(
-            track_len-end_cutoff) - SAMPLE_H)
+            track_len-end_cutoff) - config.input_time_dim)
         logging.debug(
             f"Clamping samples within times/range ({start_cutoff}, {track_len - end_cutoff}) / ({self.start_ix}, {self.end_ix})")
 
@@ -38,7 +36,7 @@ class TrackIterator:
             # If we don't have that much data, we should just use all of it - it's unlikely that there will be slow downs/speedups in a short track.
             self.start_ix = 0
             self.end_ix = int(time_to_stft_frame(
-                self.spect.audio_length())) - SAMPLE_H
+                self.spect.audio_length())) - config.input_time_dim
         # Set the config values
         self.bpm = bpm
 
@@ -67,7 +65,7 @@ class TrackIterator:
     def get_sample_at_ix(self, ix):
         logging.debug(f"Yielding data from position {ix}")
         sample = self.spect.interval(ix)
-        assert sample.shape == (SAMPLE_W, SAMPLE_H)
+        assert sample.shape == (config.input_freq_dim, config.input_time_dim)
         (w, h) = sample.shape
         return np.reshape(sample, (w, h, 1))
 
@@ -80,7 +78,7 @@ class TrackIterator:
         logging.debug(f"Spectrograph has {cols} columns of data")
 
         if sample_c is None:
-            frames = int(np.ceil(float(cols)/float(SAMPLE_H)))
+            frames = int(np.ceil(float(cols)/float(config.input_time_dim)))
             logging.debug(
                 f"End to end, {frames} frames of data are trivially available")
             assert frames > 0
@@ -92,7 +90,8 @@ class TrackIterator:
             assert sample_c < cols
             frames = sample_c
 
-        indicies = np.linspace(self.start_ix, self.end_ix-SAMPLE_H, num=frames)
+        indicies = np.linspace(
+            self.start_ix, self.end_ix-config.input_time_dim, num=frames)
         samples = np.array([self.get_sample_at_ix(int(np.floor(x)))
                             for x in indicies])
         return samples

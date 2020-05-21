@@ -17,6 +17,7 @@ import matplotlib.pyplot as plt
 
 from ...libbellson.ellington_library import EllingtonLibrary, Track
 from ...libbellson.library_iterator import LibraryIterator, TrackIterator
+from ...libbellson.model import load_model
 from ...libbellson import config
 
 import re
@@ -95,17 +96,7 @@ def main(cache_dir="/tmp", ellington_lib="data/example.el",  modelfile="nofile",
     sns.set_palette("deep")
 
     logging.info("Loading model")
-    model = None
-    try:
-        model = keras.models.load_model(modelfile, compile=False)
-    except Exception as e:
-        logging.error(f"Threw: {str(e)}")
-        logging.info("Manually creating model")
-        from libbellson.model import model_gen
-        input_time_dim = 1720
-        input_freq_dim = 256
-        model = model_gen(input_time_dim, input_freq_dim)
-        model.load_weights(modelfile)
+    model = load_model(modelfile)
 
     logging.info("Loaded model")
 

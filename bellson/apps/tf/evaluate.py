@@ -21,6 +21,7 @@ import matplotlib.pyplot as plt
 
 from ...libbellson.ellington_library import EllingtonLibrary, Track
 from ...libbellson.library_iterator import LibraryIterator, TrackIterator
+from ...libbellson.model import load_model
 from ...libbellson import config
 
 import re
@@ -47,17 +48,8 @@ def evaluate_model(library_generator, modelfile):
     graph1 = tf.Graph()
     with graph1.as_default():
         logging.info("Loading model")
-        model = None
-        try:
-            model = keras.models.load_model(modelfile, compile=False)
-        except Exception as e:
-            logging.error(f"Threw: {str(e)}")
-            logging.info("Manually creating model")
-            from trainer.model import model_gen
-            input_time_dim = 1720
-            input_freq_dim = 256
-            model = model_gen(input_time_dim, input_freq_dim)
-            model.load_weights(modelfile)
+
+        model = load_model()
 
         opt = keras.optimizers.SGD(
             lr=1e-4, decay=1e-6, momentum=0.9, nesterov=True)
