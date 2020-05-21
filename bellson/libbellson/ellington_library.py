@@ -11,6 +11,7 @@ import json
 import os
 import math
 import logging
+import re
 
 
 class Track:
@@ -54,6 +55,7 @@ class Track:
         # Get the name of the track
         try:
             trackname = json['metadata']['name']
+
         except:
             logging.error("Failed to get (non-optional) name member of json")
             return None
@@ -78,6 +80,8 @@ class Track:
         self.digest = hashlib.sha256(trackname.encode('utf-8')).hexdigest()
         self.naive_bpm = naive_bpm
         self.old_bellson_bpm = old_bellson_bpm
+        self.shortname = re.sub(
+            " \(.*\)", "", re.sub("\[.*\] ", "", trackname))
 
     def __str__(self):
         return "T["+str(self.bpm) + "," + str(self.filename) + "," + str(self.trackname) + "]"

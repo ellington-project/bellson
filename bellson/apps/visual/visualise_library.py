@@ -10,8 +10,8 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-from common.ellington_library import EllingtonLibrary, Track
-import common.config as config
+from ...libbellson.ellington_library import EllingtonLibrary, Track
+from ...libbellson import config
 
 import re
 import operator

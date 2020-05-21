@@ -11,7 +11,7 @@ from tensorflow import keras
 import numpy as np
 
 # from bellson.audio import Track, CacheLevel, TrackIterator, RangeError
-from trainer.library_iterator import TrackIterator
+from ...libbellson.library_iterator import TrackIterator
 
 
 def main(modelfile, audiofile):
@@ -25,7 +25,7 @@ def main(modelfile, audiofile):
     except Exception as e:
         logging.error(f"Threw: {str(e)}")
         logging.info("Manually creating model")
-        from trainer.model import model_gen
+        from ...libbellson.model import model_gen
         input_time_dim = 1720
         input_freq_dim = 256
         model = model_gen(input_time_dim, input_freq_dim)
@@ -38,15 +38,13 @@ def main(modelfile, audiofile):
     track_iterator = TrackIterator.from_filename(audiofile)
     logging.info(f"Loaded track from path {audiofile}")
 
-    (starttimes, samples) = track_iterator.get_batch_with_start_times(sample_count=100)
+    samples = track_iterator.get_uniform_batch(sample_c=100)
 
     logging.info("Predicting batch")
     results = model.predict_on_batch(samples).flatten().tolist()
 
-    pairs = zip(starttimes, results)
-
-    print("Results: [{}]".format("\n ".join('(%.2f, %.2f)' %
-                                            (t, (400 * r)) for (t, r) in pairs)))
+    logging.debug("Results: [{}]".format("\n ".join(
+        ['%.2f' % (r * 400) for r in results])))
     logging.info("Mean: %.2f" % (np.mean(results) * 400))
     logging.info("Stddev: %.2f" % (np.std(results) * 400))
 
@@ -58,7 +56,7 @@ def main(modelfile, audiofile):
 
 if __name__ == '__main__':
     logging.basicConfig(
-        format='%(asctime)s %(levelname)s %(module)s %(lineno)d : %(message)s', level=logging.DEBUG)
+        format='%(asctime)s %(levelname)s %(module)s %(lineno)d : %(message)s', level=logging.INFO)
     parser = argparse.ArgumentParser()
     parser.add_argument('--modelfile', required=True,
                         help='The model directory to use for inference')

@@ -17,7 +17,7 @@ export TF_FORCE_GPU_ALLOW_GROWTH=true
 tensorboard --logdir $LOGD --bind_all & 
 
 # Run training
-python3 bellson/bellson_train.py \
+python3 -m bellson.apps.tf.train \
     --ellington-lib=/mnt/bigboi/library.json \
     --job-dir=$LOGD \
     --cache-dir=/mnt/bigboi/training_cache/

@@ -7,8 +7,8 @@ import gc
 
 from tensorflow.keras.utils import Sequence
 
-from common.ellington_library import EllingtonLibrary, Track
-from common.audio_spectrogram import AudioSpectrogram, RangeError, time_to_stft_frame, stft_frame_to_time
+from .ellington_library import EllingtonLibrary, Track
+from .audio_spectrogram import AudioSpectrogram, RangeError, time_to_stft_frame, stft_frame_to_time
 
 SAMPLE_W = 256
 SAMPLE_H = 1720

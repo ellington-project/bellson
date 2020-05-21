@@ -8,7 +8,7 @@ import hashlib
 import os.path
 
 from .ellington_library import Track
-import common.config as config
+from . import config
 
 SAMPLE_LENGTH = 10
 SAMPLE_START = 60

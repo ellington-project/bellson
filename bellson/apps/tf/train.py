@@ -11,10 +11,10 @@ from tensorflow.python.client import device_lib
 
 import numpy as np
 
-from common.ellington_library import EllingtonLibrary, Track
-from trainer.library_iterator import LibraryIterator, TrackIterator
-import trainer.model as tmodel
-import common.config as config
+from ...libbellson.ellington_library import EllingtonLibrary, Track
+from ...libbellson.library_iterator import LibraryIterator, TrackIterator
+from ...libbellson import model as tmodel
+from ...libbellson import config
 
 
 class CustomCallback(keras.callbacks.Callback):

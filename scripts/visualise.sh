@@ -13,7 +13,7 @@ export TF_FORCE_GPU_ALLOW_GROWTH=true
 
 
 # Run visualisation
-python3 bellson/bellson_visualise.py \
+python3 -m bellson.apps.visual.visualise \
     --ellington-lib=/mnt/bigboi/library.json \
     --cache-dir=/mnt/bigboi/training_cache/ \
     --modelfile=/mnt/bigboi/training_runs/current/latest-model.h5 \

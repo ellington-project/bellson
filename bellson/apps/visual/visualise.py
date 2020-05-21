@@ -15,18 +15,12 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-from common.ellington_library import EllingtonLibrary, Track
-from trainer.library_iterator import LibraryIterator, TrackIterator
-import common.config as config
+from ...libbellson.ellington_library import EllingtonLibrary, Track
+from ...libbellson.library_iterator import LibraryIterator, TrackIterator
+from ...libbellson import config
 
 import re
 import operator
-
-
-# def bellson_predict(track, model):
-
-# def librosa_predict(track):
-
 
 
 def plot_inference_accuracy(tracks, filename, model):
@@ -42,16 +36,22 @@ def plot_inference_accuracy(tracks, filename, model):
         i = i + 1
 
         ti = TrackIterator.from_track(track)
+        logging.info("Loading audio samples")
         audio_samples = ti.get_uniform_batch(sample_c=128)
 
-        results = model.predict_on_batch(audio_samples).flatten().tolist()
+        logging.info("Running network")
+        results = model.predict_on_batch(
+            audio_samples).numpy().flatten().tolist()
 
         predictions = list(map(lambda s: s * 400, results))
 
-        librosa_tempo = track.librosa_tempo()
+        # logging.info("Running naive librosa method")
+        # librosa_tempo = track.librosa_tempo()
 
         results_dict[track_name] = {
-            'bpm': track.bpm, 'librosa': librosa_tempo, 'predictions': predictions}
+            'bpm': track.bpm,
+            # 'librosa': librosa_tempo,
+            'predictions': predictions}
 
     logging.info("Transforming results dictionary into list...")
     aggregate_results = []
@@ -69,15 +69,14 @@ def plot_inference_accuracy(tracks, filename, model):
     def custom_kedplot(predictions,  **kwargs):
         name = kwargs['label']
         bpm = results_dict[name]['bpm']
-        librosa = results_dict[name]['librosa']
+        # librosa = results_dict[name]['librosa']
         logging.info(f"Plotting: {name}/{bpm}")
         sns_plot = sns.kdeplot(predictions, shade=True)
         # sns_plot.axes.get_yaxis().set_visible(False)
         sns_plot.set_frame_on(False)
-        plt.yscale('log')
 
         plt.axvline(x=bpm, color=sns.color_palette()[1])
-        plt.axvline(x=librosa, color=sns.color_palette()[2])
+        # plt.axvline(x=librosa, color=sns.color_palette()[2])
 
     g = sns.FacetGrid(results_df, col="track", hue="track", height=3, aspect=1.5,
                       col_wrap=int(math.ceil(math.sqrt(len(tracks)))))
@@ -89,7 +88,7 @@ def plot_inference_accuracy(tracks, filename, model):
     g.savefig(filename)
 
 
-def main(cache_dir="/tmp", ellington_lib="data/example.el",  modelfile="nofile"):
+def main(cache_dir="/tmp", ellington_lib="data/example.el",  modelfile="nofile", plotd="plotd"):
     config.cache_directory = cache_dir
     sns.set(color_codes=True)
     sns.set_style(style='white')
@@ -102,7 +101,7 @@ def main(cache_dir="/tmp", ellington_lib="data/example.el",  modelfile="nofile")
     except Exception as e:
         logging.error(f"Threw: {str(e)}")
         logging.info("Manually creating model")
-        from trainer.model import model_gen
+        from libbellson.model import model_gen
         input_time_dim = 1720
         input_freq_dim = 256
         model = model_gen(input_time_dim, input_freq_dim)
@@ -114,7 +113,8 @@ def main(cache_dir="/tmp", ellington_lib="data/example.el",  modelfile="nofile")
     overall_library = EllingtonLibrary.from_file(ellington_lib)
     (train_lib, valid_lib) = overall_library.split_training_validation()
 
-    plot_inference_accuracy(valid_lib.tracks, "validation_accuracy.png", model)
+    plot_inference_accuracy(valid_lib.tracks, plotd +
+                            "/validation_accuracy.png", model)
     # Too big - don't do this!
     # plot_inference_accuracy(train_lib.tracks, "training_accuracy.png", model)
 
@@ -130,6 +130,8 @@ if __name__ == '__main__':
                         help='The ellington library from which to read track names and BPMs')
     parser.add_argument("--modelfile", required=True,
                         help='Model to use for inference')
+    parser.add_argument("--plotd", required=True,
+                        help='Directory to write plots to')
     args = parser.parse_args()
     arguments = args.__dict__
     main(**arguments)

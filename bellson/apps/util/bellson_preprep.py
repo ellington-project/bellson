@@ -4,9 +4,9 @@ import argparse
 
 from multiprocessing import Pool
 
-from common.ellington_library import EllingtonLibrary, Track
-from common.audio_spectrogram import AudioSpectrogram
-import common.config as config
+from ...libbellson.ellington_library import EllingtonLibrary, Track
+from ...libbellson.audio_spectrogram import AudioSpectrogram
+from ...libbellson import config
 
 total = 0
 
