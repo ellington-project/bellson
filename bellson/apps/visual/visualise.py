@@ -35,10 +35,10 @@ def plot_inference_accuracy(tracks, filename, model):
         i = i + 1
 
         ti = TrackIterator.from_track(track)
-        logging.info("Loading audio samples")
+        logging.debug("Loading audio samples")
         audio_samples = ti.get_uniform_batch(sample_c=128)
 
-        logging.info("Running network")
+        logging.debug("Running network")
         results = model.predict_on_batch(
             audio_samples)
 

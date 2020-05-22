@@ -35,11 +35,13 @@ models = {
     "v3": lambda: model_gen(l1strides=(3, 3), l2strides=(13, 13), d1width=4096, d2width=128, d3width=32),
     "v4": lambda: model_gen(l2strides=(3, 3), d1width=4096, d2width=128, d3width=32),
     "v5": lambda: model_gen(l2strides=(3, 3), d1width=4096, d2width=512, d3width=512),
+    "v6": lambda: model_gen(l1filters=128, l2filters=128, l2strides=(3, 3), d1width=4096, d2width=512, d3width=512),
+    "v7": lambda: model_gen(l1filters=16, l2filters=16, l2strides=(3, 3), d1width=2048, d2width=1024, d3width=512),
 }
 
 
 def gen_latest_model():
-    return models['v5']()
+    return models['v7']()
 
 
 def load_model(modelfile):

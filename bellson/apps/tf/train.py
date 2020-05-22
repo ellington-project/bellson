@@ -10,6 +10,7 @@ from tensorflow.python.lib.io import file_io
 from tensorflow.python.client import device_lib
 
 import numpy as np
+import cProfile
 
 from ...libbellson.ellington_library import EllingtonLibrary, Track
 from ...libbellson.library_iterator import LibraryIterator, TrackIterator
@@ -18,8 +19,9 @@ from ...libbellson import config
 
 
 class CustomCallback(keras.callbacks.Callback):
-    def __init__(self, jobd):
+    def __init__(self, jobd, profile):
         self.jobd = jobd
+        self.profile = profile
 
     def on_train_batch_end(self, batch, logs):
         logging.info(f"Finished train batch: {batch}, logs: {str(logs)}")
@@ -31,8 +33,18 @@ class CustomCallback(keras.callbacks.Callback):
         logging.info(f"Finished predict batch: {batch}, logs: {str(logs)}")
 
     def on_epoch_end(self, epoch, logs):
-        logging.debug("Saving model")
 
+        logging.info(f"Finished epoch {epoch}, logs: {str(logs)}")
+
+        logging.debug(
+            f"Dumping profiling information to {self.jobd}/profile.txt")
+
+        self.profile.disable()
+        self.profile.print_stats(sort='cumulative')
+        self.profile.dump_stats(self.jobd + "/profile.txt")
+        self.profile.enable()
+
+        logging.debug("Saving model")
         # Save the model locally
         self.model.save(self.jobd+'/latest-model.h5')
 
@@ -40,6 +52,9 @@ class CustomCallback(keras.callbacks.Callback):
 
 
 def main(cache_dir="/tmp", ellington_lib="data/example.el", job_dir="job"):
+    # Start the profiler
+    pr = cProfile.Profile()
+    pr.enable()
     logging.info("Starting training application...")
     config.cache_directory = cache_dir
 
@@ -63,8 +78,8 @@ def main(cache_dir="/tmp", ellington_lib="data/example.el", job_dir="job"):
         logging.info(f"- {trackix}/{valid_lib_len}  --  {track.trackname}")
 
     # Set up the generators to yield training data
-    training_gen = LibraryIterator(train_lib, multiplier=5)
-    validation_gen = LibraryIterator(valid_lib, multiplier=5)
+    training_gen = LibraryIterator(train_lib, multiplier=2)
+    validation_gen = LibraryIterator(valid_lib, multiplier=3)
 
     # Create the model, print info
     logging.info("Generating model")
@@ -83,6 +98,7 @@ def main(cache_dir="/tmp", ellington_lib="data/example.el", job_dir="job"):
     # Set up callbacks - one for tensorboard
     tfcallback = keras.callbacks.TensorBoard(
         log_dir=job_dir + "/tensorboard/", profile_batch=0)
+
     # Another for logging data to CSV
     csvlogger = keras.callbacks.CSVLogger(job_dir + "/training.log")
 
@@ -98,7 +114,7 @@ def main(cache_dir="/tmp", ellington_lib="data/example.el", job_dir="job"):
     )
 
     # And another for our custom callback that logs updates
-    bcallback = CustomCallback(job_dir)
+    bcallback = CustomCallback(job_dir, pr)
 
     # Fit the model using all of the above!
     logging.info("Starting training!")
