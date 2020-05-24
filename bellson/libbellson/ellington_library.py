@@ -146,7 +146,7 @@ class EllingtonLibrary:
         track_variants = []
         logging.info(f"Generating tempo variants: {variants}")
         for track in self.tracks:
-            logging.info(f"Generating variants for: {track} ")
+            logging.debug(f"Generating variants for: {track} ")
             track_variants.extend(track.as_variants(variants))
         self.tracks.extend(track_variants)
 

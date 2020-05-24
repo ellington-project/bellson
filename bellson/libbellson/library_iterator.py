@@ -133,7 +133,7 @@ class LibraryIterator(Sequence):
         # Get track idx from the library
         track = self.library.tracks[idx]
         logging.info(
-            f"Training: idx {idx} / track {track.shortname}")
+            f"Training: idx {idx} / track {track.shortname} / bpm {track.bpm}")
         ti = TrackIterator.from_track(
             track, self.start_cutoff, self.end_cutoff, multiplier=self.multiplier)
         batch = ti.get_batch_with_tempos()  # :: (samples, tempos)
