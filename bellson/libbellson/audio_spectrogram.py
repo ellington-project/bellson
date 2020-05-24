@@ -49,22 +49,26 @@ class AudioSpectrogram:
     # raw spectrogram data
     spect_data = None
 
-    def __init__(self, audio_file, track_digest, should_load=True, read_from_cache=True):
+    # Tempo modifier - how much we should alter the tempo after creating the spectrogram
+    tempo_modifier = None
+
+    def __init__(self, audio_file, track_digest, should_load=True, read_from_cache=True, tempo_modifier=None):
         logging.debug("Creating AudioSpectrogram(" +
                       audio_file + ", " + track_digest + ")")
         logging.debug("Cache directory: " + config.cache_directory)
         self.source_filename = os.path.abspath(audio_file)
         self.cache_name = os.path.abspath(
             config.cache_directory + "/" + track_digest + ".npz")
+        self.tempo_modifier = tempo_modifier
         if should_load:
             self.load_spectrogram()
 
     @classmethod
-    def from_library_track(cls, track, should_load=True, read_from_cache=True):
+    def from_library_track(cls, track, should_load=True, read_from_cache=True, tempo_modifier=None):
         return AudioSpectrogram(track.filename, track.digest, should_load, read_from_cache)
 
     @classmethod
-    def from_file_name(cls, filename, should_load=True, read_from_cache=True):
+    def from_file_name(cls, filename, should_load=True, read_from_cache=True, tempo_modifier=None):
         return AudioSpectrogram(filename, hashlib.sha256(filename.encode('utf-8')).hexdigest(), should_load, read_from_cache)
 
     def clear(self):
@@ -89,8 +93,22 @@ class AudioSpectrogram:
         S = librosa.stft(y, n_fft=config.N_FFT, hop_length=config.HOP_LENGTH,
                          win_length=config.WIN_LENGTH)
         M = librosa.core.magphase(S)[0]
+
         # store it as self.spect_data, after cutting off unneccessary high/low frequencies
         self.spect_data = librosa.amplitude_to_db(M, ref=np.max)
+
+        # if we should modify the tempo, do so to the computed spectrogram
+        # Use the high quality pythonrubberband method if possible
+        if self.tempo_modifier is not None:
+            try:
+                import pyrubberband
+                self.spect_data = pyrubberband.pyrb.time_stretch(
+                    self.spect_data, sr, self.tempo_modifier)
+            except:
+                # Fall back to low quality librosa
+                self.spect_data = librosa.effects.time_stretch(
+                    self.spect_data, self.tempo_modifier)
+
         logging.debug(
             f"spectrogram shape before low/high cutoff: {self.spect_data.shape}")
         self.spect_data = self.spect_data[

@@ -2,6 +2,10 @@
 # Where we should write cached histograms
 cache_directory = "/tmp"
 
+# Speedups/slowdown variants for tracks to augment out training set.
+augmentation_variants = [0.75, 0.8, 0.85,
+                         0.9, 0.95, 1.05, 1.1, 1.15, 1.2, 1.25]
+
 # This controls how "big" our frequency range is for training.
 SPECTROGRAM_LOW_FREQUENCY_CUTOFF = 64
 SPECTROGRAM_HIGH_FREQUENCY_CUTOFF = 320

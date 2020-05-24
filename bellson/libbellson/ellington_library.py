@@ -20,6 +20,9 @@ class Track:
     trackname = None
     digest = None
 
+    # Variants for training
+    variant = None
+
     # From other estimators
     naive_bpm = None
     old_bellson_bpm = None
@@ -41,7 +44,7 @@ class Track:
 
         # get the bpm (non-optional for training tracks)
         try:
-            bpm = int(json['metadata']['bpm'])
+            bpm = float(json['metadata']['bpm'])
             if bpm is None:
                 return None
             if bpm < 100:
@@ -71,23 +74,34 @@ class Track:
         except:
             logging.debug("Failed to get (optional) old Bellson bpm from json")
 
-        return Track(bpm, filename, trackname, naive_bpm, old_bellson_bpm)
+        return Track(bpm, filename, trackname, 1.0, naive_bpm, old_bellson_bpm)
 
-    def __init__(self, bpm, filename, trackname, naive_bpm=None, old_bellson_bpm=None):
+    def __init__(self, bpm, filename, trackname, variant=1.0, naive_bpm=None, old_bellson_bpm=None):
         self.bpm = bpm
         self.filename = filename
         self.trackname = trackname
-        self.digest = hashlib.sha256(trackname.encode('utf-8')).hexdigest()
+        self.variant = variant
+        self.digest = hashlib.sha256(filename.encode(
+            'utf-8')).hexdigest() + "-" + str(variant)
         self.naive_bpm = naive_bpm
         self.old_bellson_bpm = old_bellson_bpm
         self.shortname = re.sub(
             " \(.*\)", "", re.sub("\[.*\] ", "", trackname))
 
+    def as_variants(self, variants):
+        return [Track(
+            bpm=self.bpm*variant,
+            filename=self.filename,
+            trackname=self.trackname + "-" + str(variant),
+            variant=variant,
+            naive_bpm=self.naive_bpm,
+            old_bellson_bpm=self.old_bellson_bpm) for variant in variants]
+
     def __str__(self):
-        return "T["+str(self.bpm) + "," + str(self.filename) + "," + str(self.trackname) + "]"
+        return "T["+str(self.filename) + "," + str(self.trackname) + "," + str(self.bpm) + "]"
 
     def __repr__(self):
-        return "T["+str(self.bpm) + "," + str(self.filename) + "," + str(self.trackname) + "]"
+        return "T["+str(self.filename) + "," + str(self.trackname) + "," + str(self.bpm) + "]"
 
     def librosa_tempo(self):
         import librosa
@@ -128,13 +142,26 @@ class EllingtonLibrary:
         else:
             self.tracks = t
 
+    def augment_library(self, variants, maxsize=None):
+        track_variants = []
+        logging.info(f"Generating tempo variants: {variants}")
+        for track in self.tracks:
+            logging.info(f"Generating variants for: {track} ")
+            track_variants.extend(track.as_variants(variants))
+        self.tracks.extend(track_variants)
+
+        if maxsize is not None:
+            self.tracks = self.tracks[0:maxsize]
+        else:
+            self.tracks = self.tracks
+
     def split_training_validation(self, ratio=10):
-        n = ratio-1
+        n = ratio
         assert n > 0
         validation_tracks = [item for index, item in enumerate(
-            self.tracks) if (index + 1) % n == 0]
+            self.tracks) if (index) % n == 0]
         training_tracks = [item for index, item in enumerate(
-            self.tracks) if (index + 1) % n != 0]
+            self.tracks) if (index) % n != 0]
         (validation_size, training_size) = (
             len(validation_tracks), len(training_tracks))
 
@@ -155,14 +182,17 @@ class EllingtonLibrary:
 
 def main(file):
     el = EllingtonLibrary.from_file(file)
-    print(str(el))
+    el.augment_library([0.75, 0.8, 0.85,
+                        0.9, 0.95, 1.05, 1.1, 1.15, 1.2, 1.25])
+    for track in el.tracks:
+        logging.info(f"Track: {track}")
 
 
 if __name__ == '__main__':
     import logging
     import argparse
     logging.basicConfig(
-        format='%(asctime)s %(levelname)s %(module)s %(lineno)d : %(message)s', level=logging.DEBUG)
+        format='%(asctime)s %(levelname)s %(module)s %(lineno)d : %(message)s', level=logging.INFO)
     parser = argparse.ArgumentParser()
     parser.add_argument('--file', required=True,
                         help='Path to load the ellington library from')

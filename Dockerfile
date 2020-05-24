@@ -7,6 +7,7 @@ run pip3 install \
     librosa \
     matplotlib \
     seaborn \
+    pysoundfile \ 
     pandas 
 
 workdir bellson 

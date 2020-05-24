@@ -26,6 +26,7 @@ def main(cache_dir="data/smnp/", ellington_lib="data/example.el"):
     logging.basicConfig(
         format='%(asctime)s %(levelname)s %(module)s %(lineno)d : %(message)s', level=print)
     el = EllingtonLibrary.from_file(ellington_lib)
+    el.augment_library(config.augmentation_variants)
 
     global total
     total = len(el.tracks)
@@ -36,7 +37,7 @@ def main(cache_dir="data/smnp/", ellington_lib="data/example.el"):
     pool.map(proc, tracks)
 
 
-if __name__ == '__main__':
+def entrypoint():
     logging.basicConfig(
         format='%(asctime)s %(levelname)s %(module)s %(lineno)d : %(message)s', level=logging.INFO)
 
@@ -48,3 +49,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     arguments = args.__dict__
     main(**arguments)
+
+
+if __name__ == '__main__':
+    entrypoint()

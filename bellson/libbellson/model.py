@@ -1,9 +1,10 @@
-from tensorflow import keras
 import logging
+from tensorflow import keras
 from . import config
 
 
 def model_gen(l1filters=64, l1kernel_size=(35, 35), l1strides=(13, 13), l2filters=64, l2kernel_size=(35, 35), l2strides=(5, 5),  d1width=1000, d2width=100, d3width=20, do1=0.05, do2=0.005, do3=0.001):
+
     input_img = keras.layers.Input(
         shape=(config.input_freq_dim, config.input_time_dim, 1))
 
@@ -45,12 +46,20 @@ def gen_latest_model():
 
 
 def load_model(modelfile):
+    logging.info(f"Loading model file {modelfile}")
     model = None
     try:
         model = keras.models.load_model(modelfile, compile=False)
+        logging.debug("Loaded model directly.")
     except Exception as e:
         logging.error(f"Threw: {str(e)}")
-        logging.info("Manually creating model")
-        model = model_gen()
-        model.load_weights(modelfile)
+        logging.debug("Manually creating model")
+        for name, model_gen in models.items():
+            try:
+                model = model_gen()
+                model.load_weights(modelfile)
+                break
+            except Exception as e:
+                logging.error(f"Threw: {str(e)}")
+                logging.debug(f"Failed to load weights for model {name}")
     return model

@@ -1,35 +1,41 @@
 #!/usr/bin/env python3
+from ...libbellson.models import list_distributed_models
 import argparse
 import logging
-import gc
 import objgraph
 import time
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
-import tensorflow as tf
-from tensorflow import keras
-
-import numpy as np
 
 # from bellson.audio import Track, CacheLevel, TrackIterator, RangeError
-from ...libbellson.library_iterator import TrackIterator
-from ...libbellson.model import load_model
 
 
-def main(modelfile, audiofile):
+def main(model_file, audio_file, cache_dir, samples):
+    import tensorflow as tf
+    from tensorflow import keras
+    import numpy as np
+
+    from ...libbellson.library_iterator import TrackIterator
+    from ...libbellson.model import load_model
+
+    os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
+
     start_time = time.time()
     logging.info("Started infererence tool")
     # Create the model, print info
     logging.info("Loading model")
-    model = load_model(modelfile)
+    model = load_model(model_file)
 
     logging.info("Loaded model")
 
-    # create a track from the audiofile file path, and load spectrogram data
+    # create a track from the audio_file file path, and load spectrogram data
     # Don't cache, as this just takes up file space
-    track_iterator = TrackIterator.from_filename(audiofile)
-    logging.info(f"Loaded track from path {audiofile}")
+    track_iterator = TrackIterator.from_filename(audio_file)
+    logging.info(f"Loaded track from path {audio_file}")
 
-    samples = track_iterator.get_uniform_batch(sample_c=100)
+    logging.info("Reading samples from track")
+    samples = track_iterator.get_uniform_batch(sample_c=int(samples))
 
     logging.info("Predicting batch")
     results = model.predict_on_batch(samples)
@@ -38,25 +44,41 @@ def main(modelfile, audiofile):
     else:
         results = results.flatten().tolist()
 
+    mean = np.mean(results) * 400
+    stddev = np.std(results) * 400
+
     logging.debug("Results: [{}]".format("\n ".join(
         ['%.2f' % (r * 400) for r in results])))
-    logging.info("Mean: %.2f" % (np.mean(results) * 400))
-    logging.info("Stddev: %.2f" % (np.std(results) * 400))
+    logging.info(f"Mean: {mean:.3f}")
+    logging.info(f"Stddev: {stddev:.4f}")
 
-    logging.info("Geomean: %.2f" %
-                 ((np.array(results).prod()**(1.0/len(results))) * 400))
-
-    print("--- %s seconds ---" % (time.time() - start_time))
+    logging.info(f"Inference took {(time.time() - start_time)}s")
+    print(str(int(np.round(mean))))
 
 
-if __name__ == '__main__':
+def entrypoint():
+    models = list_distributed_models()
+
     logging.basicConfig(
         format='%(asctime)s %(levelname)s %(module)s %(lineno)d : %(message)s', level=logging.INFO)
     parser = argparse.ArgumentParser()
-    parser.add_argument('--modelfile', required=True,
-                        help='The model directory to use for inference')
-    parser.add_argument('--audiofile', required=True,
-                        help='The audiofile file to analyse')
+    if len(models) > 0:
+        model = models[0]
+        parser.add_argument('--model-file', required=False, default=model,
+                            help=f'The model to use for inference, default {model}')
+    else:
+        parser.add_argument('--model-file', required=True,
+                            help='The model to use for inference')
+    parser.add_argument('--audio-file', required=True,
+                        help='The audio file to analyse')
+    parser.add_argument('--cache-dir', required=False, default="/tmp",
+                        help='Path to cache directory, for pre-compiled histograms')
+    parser.add_argument('--samples', required=False, type=int, default=100,
+                        help='Number of samples to stract from track and perform inference on')
     args = parser.parse_args()
     arguments = args.__dict__
     main(**arguments)
+
+
+if __name__ == '__main__':
+    entrypoint()

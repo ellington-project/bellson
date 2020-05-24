@@ -132,8 +132,8 @@ class LibraryIterator(Sequence):
         assert(idx < len(self.library.tracks))
         # Get track idx from the library
         track = self.library.tracks[idx]
-        logging.debug(
-            f"Training: idx {idx} / track {track.trackname}")
+        logging.info(
+            f"Training: idx {idx} / track {track.shortname}")
         ti = TrackIterator.from_track(
             track, self.start_cutoff, self.end_cutoff, multiplier=self.multiplier)
         batch = ti.get_batch_with_tempos()  # :: (samples, tempos)

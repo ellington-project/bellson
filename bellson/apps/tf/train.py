@@ -61,7 +61,8 @@ def main(cache_dir="/tmp", ellington_lib="data/example.el", job_dir="job"):
     # Set up the data input etc.
     logging.info(f"Loading overall ellington library from {ellington_lib}")
     overall_library = EllingtonLibrary.from_file(ellington_lib)
-    (train_lib, valid_lib) = overall_library.split_training_validation()
+    (train_lib, valid_lib) = overall_library.split_training_validation(ratio=5)
+    train_lib.augment_library(config.augmentation_variants)
     train_lib_len, valid_lib_len = len(train_lib.tracks), len(valid_lib.tracks)
 
     logging.info(
@@ -135,7 +136,7 @@ def main(cache_dir="/tmp", ellington_lib="data/example.el", job_dir="job"):
     )
 
 
-if __name__ == '__main__':
+def entrypoint():
     logging.basicConfig(
         format='%(asctime)s %(levelname)s %(module)s %(lineno)d : %(message)s', level=logging.INFO)
 
@@ -149,3 +150,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     arguments = args.__dict__
     main(**arguments)
+
+
+if __name__ == '__main__':
+    entrypoint()
