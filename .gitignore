@@ -9,3 +9,6 @@ data
 data/*
 *.pyc
 **.pyc
+cache/
+locallogs/
+bellson/libbellson/models/

@@ -142,12 +142,26 @@ class EllingtonLibrary:
         else:
             self.tracks = t
 
-    def augment_library(self, variants, maxsize=None):
+    def augment_library(self, variants, validate_lengths=False, maxsize=None):
         track_variants = []
         logging.info(f"Generating tempo variants: {variants}")
         for track in self.tracks:
             logging.debug(f"Generating variants for: {track} ")
-            track_variants.extend(track.as_variants(variants))
+            # (optionally) validate the lengths to check that the tracks are long enough.
+            if validate_lengths:
+                import librosa
+                original_length = librosa.get_duration(filename=track.filename)
+                logging.info(
+                    f"Validating variants for len/track {original_length} / {track.shortname}")
+                for variant in track.as_variants(variants):
+                    new_length = original_length * variant.variant
+                    if new_length > 45:
+                        track_variants.append(variant)
+                    else:
+                        logging.warn(
+                            f"Track variant {track.shortname}, {variant.variant} did not yield enough data (45 s), so skipping extending library with it.")
+            else:
+                track_variants.extend(track.as_variants(variants))
         self.tracks.extend(track_variants)
 
         if maxsize is not None:

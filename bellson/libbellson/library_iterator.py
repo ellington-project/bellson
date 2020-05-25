@@ -16,8 +16,11 @@ class TrackIterator:
     bpm = None
     spect = None
     multiplier = 1
+    name = None
 
-    def __init__(self, spect, start_cutoff=30, end_cutoff=30, multiplier=1, bpm=None):
+    def __init__(self, name, spect, start_cutoff=30, end_cutoff=30, multiplier=1, bpm=None):
+        # Set the name for debugging
+        self.name = name
         # Load the spectrogram
         self.spect = spect
         # Set the multiplier for yielding tracks
@@ -32,21 +35,27 @@ class TrackIterator:
 
         if (track_len-end_cutoff) - start_cutoff < 30:
             logging.warn(
-                f"Track start/end times ({start_cutoff}, {track_len - end_cutoff}) gives less than 30s of data!")
+                f"Track {self.name} start/end times ({start_cutoff}, {track_len - end_cutoff}) gives less than 30s of data!")
             # If we don't have that much data, we should just use all of it - it's unlikely that there will be slow downs/speedups in a short track.
             self.start_ix = 0
+            logging.warn(
+                f"Track length {self.spect.audio_length()} may be too short!")
+            logging.warn(
+                f"Track frames {time_to_stft_frame(self.spect.audio_length())} may be too few!")
             self.end_ix = int(time_to_stft_frame(
                 self.spect.audio_length())) - config.input_time_dim
+            logging.warn(
+                f"Set new start/end times of {self.start_ix}, {self.end_ix}")
         # Set the config values
         self.bpm = bpm
 
     @classmethod
     def from_filename(cls, filename, start_cutoff=30, end_cutoff=30, multiplier=1):
-        return TrackIterator(spect=AudioSpectrogram.from_file_name(filename), start_cutoff=start_cutoff, end_cutoff=end_cutoff, multiplier=multiplier, bpm=None)
+        return TrackIterator(spect=AudioSpectrogram.from_file_name(filename), name=filename, start_cutoff=start_cutoff, end_cutoff=end_cutoff, multiplier=multiplier, bpm=None)
 
     @classmethod
     def from_track(cls, track, start_cutoff=30, end_cutoff=30, multiplier=1):
-        return TrackIterator(spect=AudioSpectrogram.from_library_track(track), start_cutoff=start_cutoff, end_cutoff=end_cutoff,  multiplier=multiplier, bpm=track.bpm)
+        return TrackIterator(spect=AudioSpectrogram.from_library_track(track), name=track.trackname, start_cutoff=start_cutoff, end_cutoff=end_cutoff,  multiplier=multiplier, bpm=track.bpm)
 
     def get_random_sample_and_time(self):
         while(True):
@@ -132,8 +141,8 @@ class LibraryIterator(Sequence):
         assert(idx < len(self.library.tracks))
         # Get track idx from the library
         track = self.library.tracks[idx]
-        logging.info(
-            f"Training: idx {idx} / track {track.shortname} / bpm {track.bpm}")
+        logging.debug(
+            f"idx {idx} / track {track.shortname} / bpm {track.bpm}")
         ti = TrackIterator.from_track(
             track, self.start_cutoff, self.end_cutoff, multiplier=self.multiplier)
         batch = ti.get_batch_with_tempos()  # :: (samples, tempos)
