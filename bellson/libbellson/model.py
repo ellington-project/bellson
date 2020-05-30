@@ -38,11 +38,12 @@ models = {
     "v5": lambda: model_gen(l2strides=(3, 3), d1width=4096, d2width=512, d3width=512),
     "v6": lambda: model_gen(l1filters=128, l2filters=128, l2strides=(3, 3), d1width=4096, d2width=512, d3width=512),
     "v7": lambda: model_gen(l1filters=16, l2filters=16, l2strides=(3, 3), d1width=2048, d2width=1024, d3width=512),
+    "v8": lambda: model_gen(l1filters=32, l1strides=(11, 11), l2filters=32, l2strides=(3, 3), d1width=2048, d2width=1024, d3width=512),
 }
 
 
 def gen_latest_model():
-    return models['v7']()
+    return models['v8']()
 
 
 def load_model(modelfile):
@@ -63,3 +64,42 @@ def load_model(modelfile):
                 logging.error(f"Threw: {str(e)}")
                 logging.debug(f"Failed to load weights for model {name}")
     return model
+
+
+def find_best_model_in_directory(directory, metric="epoch"):
+    assert metric == "epoch" or metric == "loss"
+    import glob
+    import re
+
+    name_regex = "model-epoch-(\d+)-loss-(\d\.\d+).hdf5"
+
+    best_epoch = int(0)
+    best_loss = float(1e10)
+    best_model_file = None
+
+    for model_file in glob.glob(directory + "/*.hdf5"):
+        try:
+            m = re.search(name_regex, model_file)
+            epoch = int(m.group(1))
+            loss = float(m.group(2))
+            logging.info(f"Epoch: {epoch}")
+            logging.info(f"Loss: {loss}")
+
+            if metric == "epoch" and epoch > best_epoch:
+                best_epoch = epoch
+                best_loss = loss
+                best_model_file = model_file
+                logging.info(f"Found newer model file: {model_file}")
+
+            if metric == "loss" and loss < best_loss:
+                best_epoch = epoch
+                best_loss = loss
+                best_model_file = model_file
+                logging.info(
+                    f"Found model file with lower loss: {model_file}")
+
+        except AttributeError:
+            logging.error(
+                f"Error extracting epoch/loss from model file name {model_file}")
+
+    return (best_model_file, best_epoch, best_loss)

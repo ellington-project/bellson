@@ -8,6 +8,7 @@ run pip3 install \
     matplotlib \
     seaborn \
     pysoundfile \ 
+    psutil \ 
     pandas 
 
 workdir bellson 
