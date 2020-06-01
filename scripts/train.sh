@@ -24,6 +24,6 @@ until python3 -m bellson.apps.tf.train \
     --cache-dir=/mnt/bigboi/training_cache/ ; do 
     # &> $LOGD/training_log.txt 
     echo "Training process either finished or was killed with (probably) OOM."
-    echo "Restarting in 30 seconds."
-    sleep 30
+    echo "Restarting in 5 seconds."
+    sleep 5
 done
