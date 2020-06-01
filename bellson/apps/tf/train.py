@@ -39,6 +39,11 @@ class CustomCallback(keras.callbacks.Callback):
         except KeyError:
             loss_str = ""
 
+        try:
+            mse_str = f"mse: {logs['mse']:.8f}, "
+        except KeyError:
+            mse_str = ""
+
         # Get the batch mae
         try:
             mae_str = f"mae: {logs['mae']:.7f}, "
@@ -69,7 +74,7 @@ class CustomCallback(keras.callbacks.Callback):
         mem_used = psutil.virtual_memory().used / gb
         mem_str = f"mem avail/used: {mem_avail:.3f}/{mem_used:.3f}"
 
-        return loss_str + mae_str + msle_str + mape_str + size_str + mem_str
+        return loss_str + mse_str + mae_str + msle_str + mape_str + size_str + mem_str
 
     def format_time(self, time):
         if time < 60:
@@ -167,26 +172,26 @@ def create_model(job_dir):
         logging.info(
             "No existing models found, starting from scratch by generating a model")
         model = tmodel.gen_latest_model()
-        initial_epoch = 1
+        initial_epoch = 0
 
     print(model.summary())
 
     # Compile the model
     # opt = keras.optimizers.SGD(
-    # lr=1e-4, decay=1e-6, momentum=0.9, nesterov=True)
+    #     lr=1e-4, decay=1e-6, momentum=0.9, nesterov=True)
 
     # opt = tf.keras.optimizers.Adamax()
 
     # opt = tf.keras.optimizers.Adagrad()
 
-    # opt = keras.optimizers.Adam()
+    opt = keras.optimizers.Adam(epsilon=1e-8)
 
-    opt = tf.keras.optimizers.Adadelta()
+    # opt = tf.keras.optimizers.Adadelta(learning_rate=0.01)
 
     logging.info("Compiling model")
     model.compile(optimizer=opt,
                   loss='mse',
-                  metrics=['mae', 'msle', 'mape'])
+                  metrics=['mse', 'mae', 'msle', 'mape'])
 
     return (model, initial_epoch)
 
@@ -201,8 +206,8 @@ def get_generators(cache_dir="/tmp", ellington_lib="data/example.el"):
     (train_lib, valid_lib) = overall_library.split_training_validation(ratio=5)
 
     # Augment the validation training library - and check that the variants are valid.
-    train_lib.augment_library(
-        config.augmentation_variants, validate_lengths=False)
+    # train_lib.augment_library(
+    #     config.augmentation_variants, validate_lengths=False)
 
     # Get the lengths of the sub-libraries
     train_lib_len, valid_lib_len = len(train_lib.tracks), len(valid_lib.tracks)

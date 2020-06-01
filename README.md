@@ -66,7 +66,7 @@ Bellson came into being because I was dissatisfied with the "traditional" algori
 
 An alternative approach is to train a machine learning to the structure of beats and tempo in a particular genre of music, and use that model to recognise where beats fall in a particular track. Once the beats have been identified in a track the bpm can be easily calculated by taking the average of the time between each beat. In all the literature I could find on this approach, the main input to this process is a set of tracks with *beat placement* information - i.e. when exactly (in time) beats fall. This is a huge corpus of data, as each track must have the beats methodically mapped out, and such corpii simply do not exist for swing music, making this approach untenable. 
 
-Bellson is a *third* approach: Instead of learning exact beat placements, we train an algorithm to recognise an *overall* bpm, with the details of finding beat placements hidden deep in the model. This approach requires only the data that most swing DJ's already have - a set of tracks with associated tempo/bpm information. Whether or not this approach is effective/accurate is still an open question, and a question that Bellson aims to answer. 
+Bellson is a *third* approach[1]: Instead of learning exact beat placements, we train an algorithm to recognise an *overall* bpm, with the details of finding beat placements hidden deep in the model. This approach requires only the data that most swing DJ's already have - a set of tracks with associated tempo/bpm information. Whether or not this approach is effective/accurate is still an open question, and a question that Bellson aims to answer. 
 
 ### How does Bellson relate to the Ellington project? 
 
@@ -77,3 +77,5 @@ Bellson uses the Ellington library abstraction/format for discovering tracks and
 ### Why do I need to use Ellington with Bellson? 
 
 Ellington (the parent project) is not required for using Bellson in *inference* mode, but is only required for *training* or *validation* of the model. Ellington libraries are used to drive the training mode, directing Bellson to tracks for training and validation. Removing this dependency is a potential path for Bellson, but will require the re-implementation of a large amount of code that has been reliably developed and tested in Ellington. 
+
+[1]: Note, this paper also takes a similar approach: https://www.audiolabs-erlangen.de/content/05-fau/professor/00-mueller/03-publications/2018_SchreiberMueller_TempoCNN_ISMIR_ePrint.pdf

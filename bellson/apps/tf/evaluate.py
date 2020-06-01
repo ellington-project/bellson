@@ -29,18 +29,18 @@ import operator
 
 
 def bpm_mean_error(y_true, y_pred):
-    y_true_bpm = tf.multiply(400.0, y_true)
-    y_pred_bpm = tf.multiply(400.0, y_pred)
+    # y_true_bpm = tf.multiply(400.0, y_true)
+    # y_pred_bpm = tf.multiply(400.0, y_pred)
 
-    delta = tf.abs(tf.subtract(y_true_bpm, y_pred_bpm))
+    delta = tf.abs(tf.subtract(y_true, y_pred))
     return tf.reduce_mean(delta, axis=-1)
 
 
 def bpm_std_deviation(y_true, y_pred):
-    y_true_bpm = tf.multiply(400.0, y_true)
-    y_pred_bpm = tf.multiply(400.0, y_pred)
+    # y_true = tf.multiply(400.0, y_true)
+    # y_pred = tf.multiply(400.0, y_pred)
 
-    delta = tf.abs(tf.subtract(y_true_bpm, y_pred_bpm))
+    delta = tf.abs(tf.subtract(y_true, y_pred))
     return tf.math.sqrt(tf.math.reduce_variance(delta))
 
 
@@ -49,7 +49,7 @@ def evaluate_model(library_generator, modelfile):
     with graph1.as_default():
         logging.info("Loading model")
 
-        model = load_model()
+        model = load_model(modelfile)
 
         opt = keras.optimizers.SGD(
             lr=1e-4, decay=1e-6, momentum=0.9, nesterov=True)

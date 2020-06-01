@@ -18,6 +18,7 @@ class Track:
     bpm = None
     filename = None
     trackname = None
+    shortname = None
     digest = None
 
     # Variants for training

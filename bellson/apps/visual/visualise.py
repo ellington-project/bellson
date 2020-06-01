@@ -47,7 +47,8 @@ def plot_inference_accuracy(tracks, filename, model):
         else:
             results = results.flatten().tolist()
 
-        predictions = list(map(lambda s: s * 400, results))
+        # predictions = list(map(lambda s: s * 400, results))
+        predictions = results
 
         # logging.info("Running naive librosa method")
         # librosa_tempo = track.librosa_tempo()

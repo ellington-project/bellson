@@ -44,11 +44,12 @@ def main(model_file, audio_file, cache_dir, samples):
     else:
         results = results.flatten().tolist()
 
-    mean = np.mean(results) * 400
-    stddev = np.std(results) * 400
+    mean = np.mean(results)  # * 400
+    stddev = np.std(results)  # * 400
 
     logging.debug("Results: [{}]".format("\n ".join(
-        ['%.2f' % (r * 400) for r in results])))
+        ['%.2f' % r for r in results])))
+    # ['%.2f' % (r * 400) for r in results])))
     logging.info(f"Mean: {mean:.3f}")
     logging.info(f"Stddev: {stddev:.4f}")
 

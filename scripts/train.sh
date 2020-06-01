@@ -21,8 +21,9 @@ tensorboard --logdir $LOGD --bind_all &
 until python3 -m bellson.apps.tf.train \
     --ellington-lib=/mnt/bigboi/library.json \
     --job-dir=$LOGD \
-    --cache-dir=/mnt/bigboi/training_cache/; do 
+    --cache-dir=/mnt/bigboi/training_cache/ ; do 
+    # &> $LOGD/training_log.txt 
     echo "Training process either finished or was killed with (probably) OOM."
-    echo "Restarting in 5 minutes."
-    sleep 300
+    echo "Restarting in 30 seconds."
+    sleep 30
 done

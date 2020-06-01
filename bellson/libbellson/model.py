@@ -3,7 +3,18 @@ from tensorflow import keras
 from . import config
 
 
-def model_gen(l1filters=64, l1kernel_size=(35, 35), l1strides=(13, 13), l2filters=64, l2kernel_size=(35, 35), l2strides=(5, 5),  d1width=1000, d2width=100, d3width=20, do1=0.05, do2=0.005, do3=0.001):
+def model_gen_t1(l1filters=64,
+                 l1kernel_size=(35, 35),
+                 l1strides=(13, 13),
+                 l2filters=64,
+                 l2kernel_size=(35, 35),
+                 l2strides=(5, 5),
+                 d1width=1000,
+                 d2width=100,
+                 d3width=20,
+                 do1=0.05,
+                 do2=0.005,
+                 do3=0.001):
 
     input_img = keras.layers.Input(
         shape=(config.input_freq_dim, config.input_time_dim, 1))
@@ -30,20 +41,73 @@ def model_gen(l1filters=64, l1kernel_size=(35, 35), l1strides=(13, 13), l2filter
     return keras.Model(inputs=input_img, outputs=output)
 
 
+def model_gen_t2(l1filters=16,
+                 l1kernel_size=(1, 35),
+                 l1strides=(3, 10),
+                 pFilters=12,
+                 pSizes=[16, 32, 64, 128, 256],
+                 pStrides=(3, 10),
+                 d1width=1024,
+                 d2width=256,
+                 d3width=64,
+                 do1=0.5,
+                 do2=0.05,
+                 do3=0.01):
+
+    input_img = keras.layers.Input(
+        shape=(config.input_freq_dim, config.input_time_dim, 1))
+    # Initial convolutional layers, 'cos why not.
+    conv = keras.layers.Conv2D(
+        l1filters, l1kernel_size, l1strides, padding='same', activation='elu')(input_img)
+    conv = keras.layers.Dropout(0.5)(conv)
+
+    conv = keras.layers.Conv2D(
+        l1filters, l1kernel_size, l1strides, padding='same', activation='elu')(conv)
+    conv = keras.layers.Dropout(0.5)(conv)
+
+    # Run a few parallel conv layers to try and figure out spacing.
+    def pconv(size, input_l):
+        c = keras.layers.Conv2D(
+            pFilters, (1, size), pStrides, padding='same', activation='elu')(input_l)
+        return keras.layers.Dropout(0.5)(c)
+
+    parallel = [pconv(s, conv) for s in pSizes]
+
+    concat = keras.layers.Concatenate()(parallel)
+
+    flat = keras.layers.Flatten()(concat)
+
+    dense = keras.layers.Dense(d1width, activation='elu')(flat)
+    dense = keras.layers.Dropout(do1)(dense)
+
+    dense = keras.layers.Dense(d2width, activation='elu')(dense)
+    dense = keras.layers.Dropout(do2)(dense)
+
+    dense = keras.layers.Dense(d3width, activation='elu')(dense)
+    dense = keras.layers.Dropout(do3)(dense)
+
+    output = keras.layers.Dense(1)(dense)
+
+    return keras.Model(inputs=input_img, outputs=output)
+
+
 models = {
-    "v1": lambda: model_gen(),
-    "v2": lambda: model_gen(l1kernel_size=(5, 5), l1strides=(3, 3), l2strides=(13, 13)),
-    "v3": lambda: model_gen(l1strides=(3, 3), l2strides=(13, 13), d1width=4096, d2width=128, d3width=32),
-    "v4": lambda: model_gen(l2strides=(3, 3), d1width=4096, d2width=128, d3width=32),
-    "v5": lambda: model_gen(l2strides=(3, 3), d1width=4096, d2width=512, d3width=512),
-    "v6": lambda: model_gen(l1filters=128, l2filters=128, l2strides=(3, 3), d1width=4096, d2width=512, d3width=512),
-    "v7": lambda: model_gen(l1filters=16, l2filters=16, l2strides=(3, 3), d1width=2048, d2width=1024, d3width=512),
-    "v8": lambda: model_gen(l1filters=32, l1strides=(11, 11), l2filters=32, l2strides=(3, 3), d1width=2048, d2width=1024, d3width=512),
+    "v1": lambda: model_gen_t1(),
+    "v2": lambda: model_gen_t1(l1kernel_size=(5, 5), l1strides=(3, 3), l2strides=(13, 13)),
+    "v3": lambda: model_gen_t1(l1strides=(3, 3), l2strides=(13, 13), d1width=4096, d2width=128, d3width=32),
+    "v4": lambda: model_gen_t1(l2strides=(3, 3), d1width=4096, d2width=128, d3width=32),
+    "v5": lambda: model_gen_t1(l2strides=(3, 3), d1width=4096, d2width=512, d3width=512),
+    "v6": lambda: model_gen_t1(l1filters=128, l2filters=128, l2strides=(3, 3), d1width=4096, d2width=512, d3width=512),
+    "v7": lambda: model_gen_t1(l1filters=16, l2filters=16, l2strides=(3, 3), d1width=2048, d2width=1024, d3width=512),
+    "v8": lambda: model_gen_t1(l1filters=32, l1strides=(11, 11), l2filters=32, l2strides=(3, 3), d1width=2048, d2width=1024, d3width=512),
+    "v9": lambda: model_gen_t2(),
+
+
 }
 
 
 def gen_latest_model():
-    return models['v8']()
+    return models['v9']()
 
 
 def load_model(modelfile):
@@ -71,7 +135,7 @@ def find_best_model_in_directory(directory, metric="epoch"):
     import glob
     import re
 
-    name_regex = "model-epoch-(\d+)-loss-(\d\.\d+).hdf5"
+    name_regex = "model-epoch-(\d+)-loss-(\d+\.\d+).hdf5"
 
     best_epoch = int(0)
     best_loss = float(1e10)
