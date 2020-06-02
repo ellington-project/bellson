@@ -109,8 +109,9 @@ class TrackIterator:
 
     def get_batch_with_tempos(self):
         samples = self.get_uniform_batch()
-        # tempos = np.repeat(float(self.bpm)/400.0, samples.shape[0])
-        tempos = np.repeat(float(self.bpm), samples.shape[0])
+        tempos = np.repeat((float(self.bpm)-100.0) /
+                           (400.0-100.0), samples.shape[0])
+        # tempos = np.repeat(float(self.bpm), samples.shape[0])
         logging.debug(
             f"Samples shape: {samples.shape}, tempos shape: {tempos.shape}")
         return (samples, tempos)

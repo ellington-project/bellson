@@ -41,50 +41,42 @@ def model_gen_t1(l1filters=64,
     return keras.Model(inputs=input_img, outputs=output)
 
 
-def model_gen_t2(l1filters=16,
-                 l1kernel_size=(1, 35),
-                 l1strides=(3, 10),
-                 pFilters=12,
-                 pSizes=[16, 32, 64, 128, 256],
-                 pStrides=(3, 10),
-                 d1width=1024,
-                 d2width=256,
-                 d3width=64,
-                 do1=0.5,
-                 do2=0.05,
-                 do3=0.01):
+def model_gen_t2():
 
     input_img = keras.layers.Input(
         shape=(config.input_freq_dim, config.input_time_dim, 1))
     # Initial convolutional layers, 'cos why not.
     conv = keras.layers.Conv2D(
-        l1filters, l1kernel_size, l1strides, padding='same', activation='elu')(input_img)
-    conv = keras.layers.Dropout(0.5)(conv)
+        16, (5, 35), (1, 5), padding='same', activation='elu')(input_img)
 
     conv = keras.layers.Conv2D(
-        l1filters, l1kernel_size, l1strides, padding='same', activation='elu')(conv)
-    conv = keras.layers.Dropout(0.5)(conv)
+        16, (5, 35), (1, 5), padding='same', activation='elu')(conv)
 
     # Run a few parallel conv layers to try and figure out spacing.
-    def pconv(size, input_l):
-        c = keras.layers.Conv2D(
-            pFilters, (1, size), pStrides, padding='same', activation='elu')(input_l)
-        return keras.layers.Dropout(0.5)(c)
+    def spconv(cin):
+        def pconv(size, input_l):
+            c = keras.layers.Conv2D(
+                12, (1, size), (1, 5), padding='same', activation='elu')(input_l)
+            return c
 
-    parallel = [pconv(s, conv) for s in pSizes]
+        parallel = [pconv(s, cin) for s in [4, 8, 16, 32, 64, 128]]
 
-    concat = keras.layers.Concatenate()(parallel)
+        return keras.layers.Concatenate()(parallel)
 
-    flat = keras.layers.Flatten()(concat)
+    spacing_conv = spconv(conv)
+    spacing_conv = spconv(spacing_conv)
+    spacing_conv = spconv(spacing_conv)
 
-    dense = keras.layers.Dense(d1width, activation='elu')(flat)
-    dense = keras.layers.Dropout(do1)(dense)
+    flat = keras.layers.Flatten()(spacing_conv)
 
-    dense = keras.layers.Dense(d2width, activation='elu')(dense)
-    dense = keras.layers.Dropout(do2)(dense)
+    dense = keras.layers.Dense(1024, activation='elu')(flat)
+    dense = keras.layers.Dropout(0.05)(dense)
 
-    dense = keras.layers.Dense(d3width, activation='elu')(dense)
-    dense = keras.layers.Dropout(do3)(dense)
+    dense = keras.layers.Dense(256, activation='elu')(dense)
+    dense = keras.layers.Dropout(0.02)(dense)
+
+    dense = keras.layers.Dense(64, activation='elu')(dense)
+    dense = keras.layers.Dropout(0.01)(dense)
 
     output = keras.layers.Dense(1)(dense)
 
@@ -101,8 +93,6 @@ models = {
     "v7": lambda: model_gen_t1(l1filters=16, l2filters=16, l2strides=(3, 3), d1width=2048, d2width=1024, d3width=512),
     "v8": lambda: model_gen_t1(l1filters=32, l1strides=(11, 11), l2filters=32, l2strides=(3, 3), d1width=2048, d2width=1024, d3width=512),
     "v9": lambda: model_gen_t2(),
-
-
 }
 
 
