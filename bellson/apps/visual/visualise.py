@@ -16,7 +16,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 from ...libbellson.ellington_library import EllingtonLibrary, Track
-from ...libbellson.library_iterator import LibraryIterator, TrackIterator
+from ...libbellson.library_iterator import LibraryIterator, TrackIterator, prediction_to_bpm
 from ...libbellson.model import load_model
 from ...libbellson import config
 

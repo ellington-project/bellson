@@ -20,7 +20,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 from ...libbellson.ellington_library import EllingtonLibrary, Track
-from ...libbellson.library_iterator import LibraryIterator, TrackIterator
+from ...libbellson.library_iterator import LibraryIterator, TrackIterator, prediction_to_bpm
 from ...libbellson.model import load_model
 from ...libbellson import config
 
@@ -34,9 +34,14 @@ def evaluate_model(library, modelfile, sample_count, resultd):
 
     # Create a CSV file based on that name for writing data:
     result_filename = resultd + "/" + model_name + "-appraisal.csv"
-    with open(result_filename, "w") as resultf:
-        resultf.write(
-            "model|expected_bpm|predicted_bpm\n")
+
+    exists = path.exists(result_filename)
+
+    with open(result_filename, "a+") as resultf:
+
+        if not exists:
+            resultf.write(
+                "model|expected_bpm|predicted_bpm\n")
 
         graph1 = tf.Graph()
         with graph1.as_default():
@@ -44,7 +49,7 @@ def evaluate_model(library, modelfile, sample_count, resultd):
 
             model = load_model(modelfile)
 
-            logging.info("Loaded model")
+            logging.debug("Loaded model")
 
             for track in library.tracks:
                 # Get the known data about the track.
@@ -52,13 +57,13 @@ def evaluate_model(library, modelfile, sample_count, resultd):
 
                 # create a track from the audio_file file path, and load spectrogram data
                 track_iterator = TrackIterator.from_track(track)
-                logging.info(f"Loaded track {track.trackname}")
+                logging.debug(f"Loaded track {track.trackname}")
 
-                logging.info("Reading samples from track")
+                logging.info(f"Reading samples from track {track.trackname}")
                 samples = track_iterator.get_uniform_batch(
                     sample_c=sample_count)
 
-                logging.info("Predicting batch")
+                logging.debug("Predicting batch")
                 results = model.predict_on_batch(samples)
 
                 # Do some checks to support different python/tensorflow version
@@ -69,7 +74,7 @@ def evaluate_model(library, modelfile, sample_count, resultd):
 
                 for datapoint in results:
                     if datapoint < 1:
-                        datapoint = datapoint * 400
+                        datapoint = prediction_to_bpm(datapoint)
                     # Output a CSV line of form model, track, expected_bpm, predicted_bpm
                     resultf.write(
                         f"{model_name}|{expected_bpm}|{datapoint}\n")
@@ -81,7 +86,7 @@ def main(cache_dir, ellington_lib, sample_count, resultd, models):
 
     # check whether or not the models exist before we start testing them
     for modelfile in models:
-        logging.info(f"Checking model file {modelfile}")
+        logging.debug(f"Checking model file {modelfile}")
         if not path.exists(modelfile):
             logging.error(f"Model file {modelfile} does not exist!")
             sys.exit(-1)
@@ -89,8 +94,10 @@ def main(cache_dir, ellington_lib, sample_count, resultd, models):
     # Load the library
     library = EllingtonLibrary.from_file(ellington_lib)
 
+    _, valid = library.split_training_validation(5)
+
     for modelfile in models:
-        evaluate_model(library, modelfile, sample_count, resultd)
+        evaluate_model(valid, modelfile, sample_count, resultd)
 
 
 if __name__ == '__main__':

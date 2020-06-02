@@ -12,6 +12,14 @@ from .audio_spectrogram import AudioSpectrogram, RangeError, time_to_stft_frame,
 from . import config
 
 
+def bpm_to_prediction(bpm):
+    return (float(bpm)-100.0) / (400.0-100.0)
+
+
+def prediction_to_bpm(pre):
+    return (pre * (400 - 100)) + 100
+
+
 class TrackIterator:
     bpm = None
     spect = None
@@ -109,8 +117,7 @@ class TrackIterator:
 
     def get_batch_with_tempos(self):
         samples = self.get_uniform_batch()
-        tempos = np.repeat((float(self.bpm)-100.0) /
-                           (400.0-100.0), samples.shape[0])
+        tempos = np.repeat(bpm_to_prediction(self.bpm), samples.shape[0])
         # tempos = np.repeat(float(self.bpm), samples.shape[0])
         logging.debug(
             f"Samples shape: {samples.shape}, tempos shape: {tempos.shape}")

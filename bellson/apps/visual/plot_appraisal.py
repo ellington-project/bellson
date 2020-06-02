@@ -14,6 +14,12 @@ import re
 import operator
 
 
+def replace(s):
+    m = re.search("model-epoch-(\d+)-.*", s)
+    epoch = int(m.group(1))
+    return epoch
+
+
 def main(plotd, data_files):
     sns.set(color_codes=True)
     sns.set_style(style='white')
@@ -21,14 +27,24 @@ def main(plotd, data_files):
 
     fig, ax = plt.subplots(figsize=(20, 20))
 
+    frames = []
+
     for file in data_files:
+        logging.info(f"Loading data from file: {file}")
         data = pd.read_csv(file, delimiter="|", header=0)
+        data["model"] = data["model"].apply(replace)
+        if data["model"][0] <= 100:
+            frames.append(data)
 
-        sns.lineplot(x="expected_bpm", y="predicted_bpm",
-                     hue="model", data=data, ax=ax)
+    data = pd.concat(frames)
 
-    sns.lineplot(x=[100, 300], y=[100, 300], ax=ax,
-                 label="expected", color="gray")
+    g = sns.FacetGrid(data, col="model", col_wrap=10)
+
+    g.map(sns.lineplot, "expected_bpm", "predicted_bpm")
+
+    for ax in g.axes.flat:
+        ax.set_frame_on(False)
+        ax.plot((100, 300), (100, 300), c=".2", ls="--")
 
     plt.savefig("plots/tempo_distribution.png")
 

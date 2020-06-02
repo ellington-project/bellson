@@ -83,6 +83,50 @@ def model_gen_t2():
     return keras.Model(inputs=input_img, outputs=output)
 
 
+def model_gen_t3(f1_f=64, f1_sz=(35, 35), f1_st=(15, 15),
+                 f2_f=64, f2_sz=(5, 5), f2_st=(1, 1),
+                 cf_f=24, cf_s=5
+                 ):
+    input_img = keras.layers.Input(
+        shape=(config.input_freq_dim, config.input_time_dim, 1))
+    # Initial convolutional layers, 'cos why not.
+    conv = keras.layers.Conv2D(
+        f1_f, f1_sz, f1_st, padding='same', activation='relu')(input_img)
+
+    conv = keras.layers.Conv2D(
+        f2_f, f2_sz, f2_st, padding='same', activation='relu')(conv)
+
+    # Run a few parallel conv layers to try and figure out spacing.
+    def spconv(cin):
+        def pconv(size, input_l):
+            c = keras.layers.Conv2D(
+                cf_f, (1, size), (1, cf_s), padding='same', activation='relu')(input_l)
+            return c
+
+        parallel = [pconv(s, cin) for s in [16, 24, 32, 64, 96, 128, 192, 256]]
+
+        return keras.layers.Concatenate()(parallel)
+
+    spacing_conv = spconv(conv)
+    # spacing_conv = spconv(spacing_conv)
+    # spacing_conv = spconv(spacing_conv)
+
+    flat = keras.layers.Flatten()(spacing_conv)
+
+    dense = keras.layers.Dense(1024, activation='relu')(flat)
+    dense = keras.layers.Dropout(0.05)(dense)
+
+    dense = keras.layers.Dense(256, activation='relu')(dense)
+    dense = keras.layers.Dropout(0.02)(dense)
+
+    dense = keras.layers.Dense(64, activation='elu')(dense)
+    dense = keras.layers.Dropout(0.01)(dense)
+
+    output = keras.layers.Dense(1)(dense)
+
+    return keras.Model(inputs=input_img, outputs=output)
+
+
 models = {
     "v1": lambda: model_gen_t1(),
     "v2": lambda: model_gen_t1(l1kernel_size=(5, 5), l1strides=(3, 3), l2strides=(13, 13)),
@@ -93,11 +137,12 @@ models = {
     "v7": lambda: model_gen_t1(l1filters=16, l2filters=16, l2strides=(3, 3), d1width=2048, d2width=1024, d3width=512),
     "v8": lambda: model_gen_t1(l1filters=32, l1strides=(11, 11), l2filters=32, l2strides=(3, 3), d1width=2048, d2width=1024, d3width=512),
     "v9": lambda: model_gen_t2(),
+    "v10": lambda: model_gen_t3(f1_st=(15, 17)),  # TODO: Try this!
 }
 
 
 def gen_latest_model():
-    return models['v9']()
+    return models['v10']()
 
 
 def load_model(modelfile):
