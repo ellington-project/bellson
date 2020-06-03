@@ -108,8 +108,8 @@ def model_gen_t3(f1_f=64, f1_sz=(35, 35), f1_st=(15, 15),
         return keras.layers.Concatenate()(parallel)
 
     spacing_conv = spconv(conv)
-    # spacing_conv = spconv(spacing_conv)
-    # spacing_conv = spconv(spacing_conv)
+    spacing_conv = spconv(spacing_conv)
+    spacing_conv = spconv(spacing_conv)
 
     flat = keras.layers.Flatten()(spacing_conv)
 

@@ -16,7 +16,7 @@ def main(model_file, audio_file, cache_dir, samples):
     from tensorflow import keras
     import numpy as np
 
-    from ...libbellson.library_iterator import TrackIterator
+    from ...libbellson.library_iterator import TrackIterator, prediction_to_bpm
     from ...libbellson.model import load_model
 
     os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
@@ -47,7 +47,11 @@ def main(model_file, audio_file, cache_dir, samples):
     mean = np.mean(results)  # * 400
     stddev = np.std(results)  # * 400
 
-    logging.debug("Results: [{}]".format("\n ".join(
+    if mean < 1:
+        mean = prediction_to_bpm(mean)
+        stddev = prediction_to_bpm(stddev)
+
+    logging.info("Results: [{}]".format("\n ".join(
         ['%.2f' % r for r in results])))
     # ['%.2f' % (r * 400) for r in results])))
     logging.info(f"Mean: {mean:.3f}")

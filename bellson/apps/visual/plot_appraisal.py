@@ -20,7 +20,7 @@ def replace(s):
     return epoch
 
 
-def main(plotd, data_files):
+def main(name, plotd, data_files):
     sns.set(color_codes=True)
     sns.set_style(style='white')
     sns.set_palette("deep")
@@ -38,7 +38,7 @@ def main(plotd, data_files):
 
     data = pd.concat(frames)
 
-    g = sns.FacetGrid(data, col="model", col_wrap=10)
+    g = sns.FacetGrid(data, col="model", col_wrap=5)
 
     g.map(sns.lineplot, "expected_bpm", "predicted_bpm")
 
@@ -46,7 +46,7 @@ def main(plotd, data_files):
         ax.set_frame_on(False)
         ax.plot((100, 300), (100, 300), c=".2", ls="--")
 
-    plt.savefig("plots/tempo_distribution.png")
+    plt.savefig(f"{plotd}/{name}")
 
 
 if __name__ == '__main__':
@@ -54,6 +54,9 @@ if __name__ == '__main__':
         format='%(asctime)s %(levelname)s %(module)s %(lineno)d : %(message)s', level=logging.INFO)
 
     parser = argparse.ArgumentParser()
+    parser.add_argument("--name", required=False, default="model_fits.png",
+                        help="Name of the file to plot to. Stored in plotd.")
+
     parser.add_argument('--plotd', required=False, default="plots",
                         help='A directory in which to store generated plots.')
 
