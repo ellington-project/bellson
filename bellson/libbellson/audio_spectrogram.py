@@ -129,7 +129,7 @@ class AudioSpectrogram:
 
         # If we should cache, save it.
         if should_cache:
-            logging.debug("Saving spectrogram to cache. ")
+            logging.info(f"Saving spectrogram to cache {self.cache_name}")
             np.savez_compressed(self.cache_name, spect=self.spect_data)
 
     def load_spectrogram(self, read_from_cache=True):

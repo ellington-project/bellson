@@ -7,12 +7,15 @@ augmentation_variants = [0.75, 0.8, 0.85,
                          0.9, 0.95, 1.05, 1.1, 1.15, 1.2, 1.25]
 
 # This controls how "big" our frequency range is for training.
-SPECTROGRAM_LOW_FREQUENCY_CUTOFF = 64
-SPECTROGRAM_HIGH_FREQUENCY_CUTOFF = 320
+# SPECTROGRAM_LOW_FREQUENCY_CUTOFF = 64
+# SPECTROGRAM_HIGH_FREQUENCY_CUTOFF = 320
+SPECTROGRAM_LOW_FREQUENCY_CUTOFF = 0
+SPECTROGRAM_HIGH_FREQUENCY_CUTOFF = 512
 
 # The shapes of the resulting input tensors
 # Note, input_time_dim is user adjustable, but input_freq_dim depends on the cutoff frequencies that we specify.
-input_time_dim = 1720
+# input_time_dim = 1720
+input_time_dim = 860
 input_freq_dim = SPECTROGRAM_HIGH_FREQUENCY_CUTOFF - \
     SPECTROGRAM_LOW_FREQUENCY_CUTOFF
 

@@ -100,10 +100,11 @@ def model_gen_t3(f1_f=64, f1_sz=(35, 35), f1_st=(15, 15),
     def spconv(cin):
         def pconv(size, input_l):
             c = keras.layers.Conv2D(
-                cf_f, (1, size), (1, cf_s), padding='same', activation='relu')(input_l)
+                cf_f, (1, size), (cf_s, 1), padding='same', activation='relu')(input_l)
             return c
 
-        parallel = [pconv(s, cin) for s in [16, 24, 32, 64, 96, 128, 192, 256]]
+        parallel = [pconv(s, cin)
+                    for s in [4, 8, 16, 24, 32, 64, 96, 128, 192, 256]]
 
         return keras.layers.Concatenate()(parallel)
 
@@ -137,12 +138,13 @@ models = {
     "v7": lambda: model_gen_t1(l1filters=16, l2filters=16, l2strides=(3, 3), d1width=2048, d2width=1024, d3width=512),
     "v8": lambda: model_gen_t1(l1filters=32, l1strides=(11, 11), l2filters=32, l2strides=(3, 3), d1width=2048, d2width=1024, d3width=512),
     "v9": lambda: model_gen_t2(),
-    "v10": lambda: model_gen_t3(f1_st=(15, 17)),  # TODO: Try this!
+    "v10": lambda: model_gen_t3(f1_st=(15, 17)),
+    "v11": lambda: model_gen_t3(f1_sz=(4, 32), f1_st=(32, 8)),
 }
 
 
 def gen_latest_model():
-    return models['v10']()
+    return models['v11']()
 
 
 def load_model(modelfile):

@@ -177,8 +177,8 @@ def create_model(job_dir):
     print(model.summary())
 
     # Compile the model
-    opt = keras.optimizers.SGD(
-        lr=1e-4, decay=1e-6, momentum=0.9, nesterov=True)
+    # opt = keras.optimizers.SGD(
+    #     lr=1e-4, decay=1e-6, momentum=0.9, nesterov=True)
 
     # opt = tf.keras.optimizers.Adamax()
 
@@ -186,7 +186,7 @@ def create_model(job_dir):
 
     # opt = keras.optimizers.Adam(epsilon=1e-8)
 
-    # opt = tf.keras.optimizers.Adadelta(learning_rate=0.01)
+    opt = tf.keras.optimizers.Adadelta(learning_rate=0.01)
 
     logging.info("Compiling model")
     model.compile(optimizer=opt,

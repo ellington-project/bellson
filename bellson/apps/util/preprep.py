@@ -17,7 +17,7 @@ def proc(tp):
     track = tp[1]
 
     print(f"Starting {ix} / {total} - {track.trackname}")
-    audiotrack = AudioSpectrogram.from_library_track(track)
+    _ = AudioSpectrogram.from_library_track(track)
     print(f"Finished track {track.trackname} ({ix} / {total})")
 
 
@@ -26,7 +26,7 @@ def main(cache_dir="data/smnp/", ellington_lib="data/example.el", workers=10):
     logging.basicConfig(
         format='%(asctime)s %(levelname)s %(module)s %(lineno)d : %(message)s', level=print)
     el = EllingtonLibrary.from_file(ellington_lib)
-    el.augment_library(config.augmentation_variants)
+    # el.augment_library(config.augmentation_variants)
 
     global total
     total = len(el.tracks)
