@@ -36,12 +36,16 @@ def main(name, plotd, data_files):
         if data["model"][0] <= 100:
             frames.append(data)
 
+    logging.info(f"Concatenating data frames")
     data = pd.concat(frames)
 
+    logging.info(f"Building facet grid")
     g = sns.FacetGrid(data, col="model", col_wrap=5)
 
+    logging.info(f"Mapping lineplot")
     g.map(sns.lineplot, "expected_bpm", "predicted_bpm")
 
+    logging.info(f"Plotting expected line")
     for ax in g.axes.flat:
         ax.set_frame_on(False)
         ax.plot((100, 300), (100, 300), c=".2", ls="--")

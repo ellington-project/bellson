@@ -226,8 +226,10 @@ def get_generators(cache_dir="/tmp", ellington_lib="data/example.el"):
         logging.debug(f"- {trackix}/{valid_lib_len}  --  {track.trackname}")
 
     # Set up the generators to yield training data
-    training_gen = LibraryIterator(train_lib, multiplier=1)
-    validation_gen = LibraryIterator(valid_lib, multiplier=1)
+    training_gen = LibraryIterator(
+        train_lib, start_cutoff=5, end_cutoff=5, multiplier=1)
+    validation_gen = LibraryIterator(
+        valid_lib, start_cutoff=5, end_cutoff=5, multiplier=1)
 
     return (training_gen, validation_gen)
 

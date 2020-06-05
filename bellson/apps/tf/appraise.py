@@ -9,15 +9,9 @@ from os import path
 import sys
 
 import tensorflow as tf
-from tensorflow import Graph
-from tensorflow import keras
-from tensorflow.python.lib.io import file_io
-from tensorflow.python.client import device_lib
 
 import numpy as np
 import pandas as pd
-import seaborn as sns
-import matplotlib.pyplot as plt
 
 from ...libbellson.ellington_library import EllingtonLibrary, Track
 from ...libbellson.library_iterator import LibraryIterator, TrackIterator, prediction_to_bpm
@@ -66,10 +60,10 @@ def evaluate_model(library, modelfile, sample_count, resultd):
                 logging.debug("Predicting batch")
                 results = model.predict_on_batch(samples)
 
-                # Do some checks to support different python/tensorflow version
-                if isinstance(results, tf.python.framework.ops.EagerTensor):
+                # Support different python/tensorflow versions - some need `.numpy()` before `.flatten()`
+                try:
                     results = results.numpy().flatten().tolist()
-                else:
+                except Exception:
                     results = results.flatten().tolist()
 
                 for datapoint in results:
