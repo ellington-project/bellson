@@ -104,7 +104,7 @@ def model_gen_t3(f1_f=64, f1_sz=(35, 35), f1_st=(15, 15),
             return c
 
         parallel = [pconv(s, cin)
-                    for s in [4, 8, 16, 24, 32, 64, 96, 128, 192, 256]]
+                    for s in [4, 8, 16, 24, 32, 64, 96, 128, 192]]  # , 256]]
 
         return keras.layers.Concatenate()(parallel)
 
@@ -139,12 +139,13 @@ models = {
     "v8": lambda: model_gen_t1(l1filters=32, l1strides=(11, 11), l2filters=32, l2strides=(3, 3), d1width=2048, d2width=1024, d3width=512),
     "v9": lambda: model_gen_t2(),
     "v10": lambda: model_gen_t3(f1_st=(15, 17)),
-    "v11": lambda: model_gen_t3(f1_sz=(4, 32), f1_st=(32, 8)),
+    "v11": lambda: model_gen_t3(f1_sz=(4, 32), f1_st=(32, 8)),  # Really good!
+    "v12": lambda: model_gen_t3(f1_sz=(4, 24), f1_st=(32, 4)),
 }
 
 
 def gen_latest_model():
-    return models['v11']()
+    return models['v12']()
 
 
 def load_model(modelfile):

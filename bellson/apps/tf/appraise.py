@@ -22,7 +22,38 @@ import re
 import operator
 
 
-def evaluate_model(library, modelfile, sample_count, resultd):
+def evaluate_library(model, model_name, sample_count, resultf, library, library_type):
+    for track in library.tracks:
+        # Get the known data about the track.
+        expected_bpm = track.bpm
+
+        # create a track from the audio_file file path, and load spectrogram data
+        track_iterator = TrackIterator.from_track(track)
+        logging.debug(f"Loaded track {track.trackname}")
+
+        logging.info(f"Reading samples from track {track.trackname}")
+        samples = track_iterator.get_uniform_batch(
+            sample_c=sample_count)
+
+        logging.debug("Predicting batch")
+        results = model.predict_on_batch(samples)
+
+        # Support different python/tensorflow versions - some need `.numpy()` before `.flatten()`
+        try:
+            results = results.numpy().flatten().tolist()
+        except Exception:
+            results = results.flatten().tolist()
+
+        for datapoint in results:
+            if datapoint < 1:
+                datapoint = prediction_to_bpm(datapoint)
+            # Output a CSV line of form model, track, expected_bpm, predicted_bpm
+            resultf.write(
+                f"{model_name}|{library_type}|{expected_bpm}|{datapoint}\n")
+        resultf.flush()
+
+
+def evaluate_model(train, valid, modelfile, sample_count, resultd):
     # Get a shorthand name for the model
     model_name = path.basename(modelfile)
 
@@ -35,7 +66,7 @@ def evaluate_model(library, modelfile, sample_count, resultd):
 
         if not exists:
             resultf.write(
-                "model|expected_bpm|predicted_bpm\n")
+                "model|library|expected_bpm|predicted_bpm\n")
 
         graph1 = tf.Graph()
         with graph1.as_default():
@@ -44,35 +75,10 @@ def evaluate_model(library, modelfile, sample_count, resultd):
             model = load_model(modelfile)
 
             logging.debug("Loaded model")
-
-            for track in library.tracks:
-                # Get the known data about the track.
-                expected_bpm = track.bpm
-
-                # create a track from the audio_file file path, and load spectrogram data
-                track_iterator = TrackIterator.from_track(track)
-                logging.debug(f"Loaded track {track.trackname}")
-
-                logging.info(f"Reading samples from track {track.trackname}")
-                samples = track_iterator.get_uniform_batch(
-                    sample_c=sample_count)
-
-                logging.debug("Predicting batch")
-                results = model.predict_on_batch(samples)
-
-                # Support different python/tensorflow versions - some need `.numpy()` before `.flatten()`
-                try:
-                    results = results.numpy().flatten().tolist()
-                except Exception:
-                    results = results.flatten().tolist()
-
-                for datapoint in results:
-                    if datapoint < 1:
-                        datapoint = prediction_to_bpm(datapoint)
-                    # Output a CSV line of form model, track, expected_bpm, predicted_bpm
-                    resultf.write(
-                        f"{model_name}|{expected_bpm}|{datapoint}\n")
-                resultf.flush()
+            evaluate_library(model, model_name, sample_count,
+                             resultf, train, "training")
+            evaluate_library(model, model_name, sample_count,
+                             resultf, valid, "validation")
 
 
 def main(cache_dir, ellington_lib, sample_count, resultd, models):
@@ -88,10 +94,10 @@ def main(cache_dir, ellington_lib, sample_count, resultd, models):
     # Load the library
     library = EllingtonLibrary.from_file(ellington_lib)
 
-    _, valid = library.split_training_validation(5)
+    train, valid = library.split_training_validation(5)
 
     for modelfile in models:
-        evaluate_model(valid, modelfile, sample_count, resultd)
+        evaluate_model(train, valid, modelfile, sample_count, resultd)
 
 
 if __name__ == '__main__':

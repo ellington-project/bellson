@@ -40,7 +40,7 @@ def main(name, plotd, data_files):
     data = pd.concat(frames)
 
     logging.info(f"Building facet grid")
-    g = sns.FacetGrid(data, col="model", col_wrap=5)
+    g = sns.FacetGrid(data, col="model", hue="library", col_wrap=5)
 
     logging.info(f"Mapping lineplot")
     g.map(sns.lineplot, "expected_bpm", "predicted_bpm")

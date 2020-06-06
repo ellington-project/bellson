@@ -39,6 +39,7 @@ def main(model_file, audio_file, cache_dir, samples):
 
     logging.info("Predicting batch")
     results = model.predict_on_batch(samples)
+
     if isinstance(results, tf.python.framework.ops.EagerTensor):
         results = results.numpy().flatten().tolist()
     else:
@@ -65,7 +66,7 @@ def entrypoint():
     models = list_distributed_models()
 
     logging.basicConfig(
-        format='%(asctime)s %(levelname)s %(module)s %(lineno)d : %(message)s', level=logging.INFO)
+        format='%(asctime)s %(levelname)s %(module)s %(lineno)d : %(message)s', level=logging.DEBUG)
     parser = argparse.ArgumentParser()
     if len(models) > 0:
         model = models[0]
